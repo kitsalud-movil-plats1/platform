@@ -2,14 +2,15 @@
 
 Servicios de plataforma del kit.
 
-| Ruta | Rol (VM) | Contenido |
+| Ruta | Dónde | Contenido |
 |---|---|---|
-| `nodos/` | kvm01, kvm02, kvm03 | Netplan, bridges VLAN, definiciones libvirt por perfil de despliegue, NUT (primario en kvm01 con `dummy-ups`, secundarios en los demás nodos) |
-| `infra01/bind9/` | infra01 (VM infra01) | Zona `salud.movil`, zonas inversas v4/v6 |
-| `infra01/chrony/` | infra01 (VM infra01) | Servidor NTP (`local stratum 10`) |
-| `dc01/` | dc01 (VM infra01, IP `.11`) | Aprovisionamiento de Samba AD DC (`ad.salud.movil`) |
-| `files01/` | files01 (VM ops01, IP `.12`) | Samba miembro (SMB) y exportaciones NFS |
-| `backups/` | todas las VMs → files01 | Timers de restic en cada VM, rest-server en modo append-only (repositorio en el disco USB), política de retención |
+| `kit01/libvirt/` | kit01 | Definiciones de las VMs `clinica01` y `comunidad01` (autostart, retardo de arranque), perfiles por misión |
+| `kit01/bind9/` | kit01 | Zona `salud.movil`, zonas inversas v4/v6, delegación de `ad.salud.movil` y respuestas para la detección de portal |
+| `kit01/chrony/` | kit01 | Servidor NTP (`local stratum 10`) |
+| `kit01/nut/` | kit01 | NUT con `dummy-ups` y script de apagado ordenado (comunidad01 → clinica01 → kit01) |
+| `kit01/netbird/` | kit01 | Instalación de NetBird para administración remota (la clave de registro no se versiona) |
+| `clinica01/samba/` | clinica01 | Aprovisionamiento de Samba AD DC (`ad.salud.movil`) y recursos SMB `archivos` y `contenido` |
+| `backups/` | kit01 → disco USB | restic en modelo pull: extracción de dumps por SSH, política de retención y restauración |
 | `ansible/` | - | Inventario y playbooks (secretos en `ansible-vault`) |
 
-Qué VM corre en qué nodo depende del perfil de despliegue (sección 10.3 de `docs/arquitectura/00-punto-de-partida.md`).
+Referencia de diseño: `docs/arquitectura/00-punto-de-partida.md` (secciones 7, 11 y 14).
