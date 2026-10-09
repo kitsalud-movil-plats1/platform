@@ -1,4 +1,4 @@
-# kit01 — Beelink EQi12
+# kit01. Beelink EQi12
 
 Router/firewall e hipervisor del kit (D-02, D-04, sección 6 del documento). Ficha del equipo: `workspace/contexto/equipos/kit01-beelink-eqi12.md`.
 
