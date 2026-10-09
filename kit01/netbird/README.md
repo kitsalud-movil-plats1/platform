@@ -2,7 +2,7 @@
 
 Acceso remoto para administrar el kit durante el desarrollo (D-21, sección 10.7 del documento). No forma parte de la operación en campo.
 
-**Estado (2026-10-09).** Instalado (versión 0.80.0) y conectado. IP de kit01 en la red de NetBird: `100.90.225.113`.
+**Estado (2026-10-09).** Instalado (versión 0.80.0) y conectado. La IP de kit01 en la red de NetBird es `100.90.225.113`.
 
 ## Instalación
 
@@ -11,7 +11,7 @@ curl -fsSL https://pkgs.netbird.io/install.sh | sh
  sudo netbird up --setup-key '<SETUP-KEY>'      # con un espacio al inicio: no queda en el historial
 ```
 
-La clave de registro (setup key) no se versiona: se guarda en `ansible-vault`.
+La clave de registro (setup key) no se versiona y se guarda en `ansible-vault`.
 
 ## Uso
 
@@ -38,5 +38,5 @@ sudo systemctl disable --now netbird
 
 ## Pendiente (`platform#3`)
 
-- Política en NetBird: solo el grupo de integrantes y solo SSH (TCP 22) hacia kit01.
+- Política en NetBird para que solo el grupo de integrantes tenga acceso, y solo SSH (TCP 22) hacia kit01.
 - Que cada integrante compruebe su acceso desde fuera del laboratorio.
