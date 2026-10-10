@@ -60,6 +60,13 @@
         --graphics none --noautoconsole
       changed_when: true
 
+    - name: "{{ vm.nombre }}: esperar el SSH de la VM"
+      ansible.builtin.wait_for:
+        host: "{{ vm.ipv4 }}"
+        port: 22
+        search_regex: OpenSSH
+        timeout: 600
+
   always:
     # user-data lleva el hash de la contraseña; no se deja en disco
     - name: "{{ vm.nombre }}: borrar los archivos de cloud-init"
