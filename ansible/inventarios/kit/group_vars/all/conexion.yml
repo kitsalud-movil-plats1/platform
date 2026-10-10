@@ -1,0 +1,7 @@
+---
+# Conexión con el usuario de administración compartido (D-18). Los valores
+# secretos vienen del vault (group_vars/all/vault.yml).
+admin_usuario: kitsalud
+ansible_user: "{{ admin_usuario }}"
+ansible_password: "{{ vault_admin_password }}"
+ansible_become_password: "{{ vault_admin_password }}"

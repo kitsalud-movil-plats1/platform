@@ -1,0 +1,6 @@
+---
+# El cliente no tiene IP fija: se entra por la link-local de la VLAN 10 a través de kitlab-kit01
+ansible_ssh_common_args: >-
+  -o HostKeyAlias=kitlab-cliente
+  -o ProxyCommand="ssh -W [fe80::5054:ff:fe4b:201%%lan0.10]:22 {{ ansible_user }}@192.168.88.11"
+comun_admin_grupos_extra: []

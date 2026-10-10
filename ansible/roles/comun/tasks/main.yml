@@ -1,0 +1,77 @@
+---
+- name: Usuario de administración compartido con sudo
+  ansible.builtin.user:
+    name: "{{ admin_usuario }}"
+    password: "{{ vault_admin_password_hash }}"
+    update_password: on_create   # nunca cambia una contraseña existente
+    shell: /bin/bash
+    groups: "{{ ['sudo'] + comun_admin_grupos_extra }}"
+    append: true
+
+- name: sshd sin acceso de root
+  ansible.builtin.template:
+    src: sshd-10-comun.conf.j2
+    dest: /etc/ssh/sshd_config.d/10-comun.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar sshd
+
+- name: Quitar el drop-in anterior de kit01 (platform#2), reemplazado por 10-comun.conf
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config.d/10-kit01.conf
+    state: absent
+  notify: Recargar sshd
+
+- name: Zona horaria
+  community.general.timezone:
+    name: "{{ comun_zona_horaria }}"
+
+- name: ufw con entrada denegada y SSH solo desde kit01
+  when: comun_ufw | bool
+  block:
+    - name: Paquete ufw
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+
+    - name: SSH desde kit01
+      community.general.ufw:
+        rule: allow
+        proto: tcp
+        port: "22"
+        from_ip: "{{ item }}"
+      loop: "{{ comun_ufw_ssh_origenes }}"
+
+    - name: Política de entrada denegada y ufw activo
+      community.general.ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+
+- name: Cliente Chrony hacia kit01
+  when: comun_chrony_cliente | bool
+  block:
+    - name: Paquete chrony
+      ansible.builtin.apt:
+        name: chrony
+        state: present
+
+    - name: Fuente de hora del kit
+      ansible.builtin.template:
+        src: chrony-kitsalud.sources.j2
+        dest: /etc/chrony/sources.d/kitsalud.sources
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Recargar fuentes de chrony
+
+- name: Reenvío de rsyslog hacia kit01
+  when: comun_rsyslog_reenvio | bool
+  ansible.builtin.template:
+    src: rsyslog-90-reenvio.conf.j2
+    dest: /etc/rsyslog.d/90-reenvio.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar rsyslog

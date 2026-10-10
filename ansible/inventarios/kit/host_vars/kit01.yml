@@ -1,0 +1,8 @@
+---
+# Nombres del kernel de cada rol de interfaz (D-14, R-08)
+iface_wan: enp170s0
+iface_lan: enp171s0
+# kit01 es el hipervisor (platform#2)
+comun_admin_grupos_extra: [libvirt, kvm]
+# En kit01 filtra nftables (network#4); ufw no se toca
+comun_ufw: false

@@ -1,0 +1,4 @@
+# La contraseña del vault vive fuera del repositorio (~/.config/kitsalud/vault-pass)
+.vault-pass
+vault-pass
+*.retry

@@ -1,0 +1,6 @@
+---
+# Valores del rol comun para todo el kit
+comun_zona_horaria: America/Bogota
+# Se encienden cuando existan los servidores (platform#6 y observability#3)
+comun_chrony_cliente: false
+comun_rsyslog_reenvio: false

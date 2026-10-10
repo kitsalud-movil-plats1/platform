@@ -1,0 +1,5 @@
+# {{ ansible_managed }} (rol comun, R12)
+# Reenvío por TCP a kit01 con cola en disco, para no perder eventos si kit01 no responde
+*.* action(type="omfwd" target="{{ comun_rsyslog_destino }}" port="514" protocol="tcp"
+           queue.type="LinkedList" queue.filename="reenvio" queue.saveOnShutdown="on"
+           action.resumeRetryCount="-1")

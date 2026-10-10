@@ -1,0 +1,7 @@
+---
+# Plantilla de inventarios/kit/group_vars/all/vault.yml (cifrado con ansible-vault).
+# Mismas claves, sin valores. No poner valores reales en este archivo.
+vault_admin_password: ""        # usuario de administración compartido (D-18)
+vault_admin_password_hash: ""   # hash SHA-512 de la misma contraseña (openssl passwd -6)
+vault_sw01_password: ""         # usuario admin de sw01
+vault_ap01_password: ""         # usuario admin de ap01 (R-12)

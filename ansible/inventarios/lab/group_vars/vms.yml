@@ -1,0 +1,7 @@
+---
+comun_ufw: true
+# kitlab-kit01 llega al cliente por la link-local de la VLAN 10
+comun_ufw_ssh_origenes:
+  - "{{ redes.interna.gw4 }}"
+  - "{{ gw_link_local }}"
+  - fe80::5054:ff:fe4b:102
