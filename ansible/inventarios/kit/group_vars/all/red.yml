@@ -1,0 +1,41 @@
+---
+# Plan de direcciones del kit (secciones 7 y 8 del documento). Se define una sola
+# vez aquí; el inventario del laboratorio virtual enlaza este mismo archivo.
+dominio: salud.movil
+red_kit4: 10.20.0.0/16
+ula_kit6: fd5a:fc7e:d716::/48
+gw_link_local: fe80::1
+admin_ipv4_rango: 10.20.10.10-10.20.10.29
+
+redes:
+  interna:
+    vlan: 10
+    interfaz: lan0.10
+    ipv4: 10.20.10.0/24
+    gw4: 10.20.10.1
+    ipv6: fd5a:fc7e:d716:10::/64
+    gw6: fd5a:fc7e:d716:10::1
+  servidores:
+    interfaz: br-srv
+    ipv4: 10.20.20.0/24
+    gw4: 10.20.20.1
+    ipv6: fd5a:fc7e:d716:20::/64
+    gw6: fd5a:fc7e:d716:20::1
+  comunidad:
+    vlan: 40
+    interfaz: br-com
+    ipv4: 10.20.40.0/24
+    gw4: 10.20.40.1
+    ipv6: fd5a:fc7e:d716:40::/64
+    gw6: fd5a:fc7e:d716:40::1
+
+# Servicios de kit01 para los clientes (DNS, NTP, monitoreo, syslog)
+servicios_kit01:
+  ipv4: 10.20.20.10
+  ipv6: fd5a:fc7e:d716:20::10
+
+equipos:
+  sw01: { ipv4: 10.20.10.2, ipv6: "fd5a:fc7e:d716:10::2" }
+  ap01: { ipv4: 10.20.10.3 }
+  clinica01: { ipv4: 10.20.20.11, ipv6: "fd5a:fc7e:d716:20::11" }
+  comunidad01: { ipv4: 10.20.20.12, ipv6: "fd5a:fc7e:d716:20::12" }

@@ -1,0 +1,7 @@
+---
+# Base común de kit01 y las VMs (platform#4)
+- name: Rol comun
+  hosts: all
+  become: true
+  roles:
+    - comun

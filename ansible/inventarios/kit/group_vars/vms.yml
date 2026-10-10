@@ -1,0 +1,10 @@
+---
+# Las VMs solo aceptan SSH desde kit01 (D-18) y tienen ufw (sección 10.1).
+comun_ufw: true
+comun_ufw_ssh_origenes:
+  - "{{ redes.servidores.gw4 }}"
+  - "{{ servicios_kit01.ipv4 }}"
+  - "{{ redes.servidores.gw6 }}"
+  - "{{ servicios_kit01.ipv6 }}"
+  - "{{ gw_link_local }}"
+# El salto por kit01 se define en platform#7, cuando existan las VMs.

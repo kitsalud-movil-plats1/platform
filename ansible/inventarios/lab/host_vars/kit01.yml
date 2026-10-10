@@ -1,0 +1,6 @@
+---
+# En el laboratorio, cloud-init fija los nombres wan0 y lan0 por MAC
+iface_wan: wan0
+iface_lan: lan0
+comun_admin_grupos_extra: []
+comun_ufw: false

@@ -1,0 +1,5 @@
+---
+# En el laboratorio virtual se entra con el usuario y la llave de cada integrante
+# (cloud-init) y sudo no pide contraseña. El usuario compartido lo crea el rol comun.
+admin_usuario: kitsalud
+ansible_user: "{{ lookup('env', 'LAB_USUARIO') | default(lookup('env', 'USER'), true) }}"
