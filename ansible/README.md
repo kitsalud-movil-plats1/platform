@@ -7,13 +7,17 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | Ruta | Contenido |
 |---|---|
 | `ansible.cfg` | Inventario por defecto (`inventarios/kit`), `roles_path` hacia `roles/` y hacia `../../{network,apps,observability}/ansible/roles`, y la contraseña del vault en `~/.config/kitsalud/vault-pass` |
-| `inventarios/kit/` | kit01 por NetBird y, desde platform#7, clinica01 y comunidad01 a través de kit01 |
+| `inventarios/kit/` | kit01 por NetBird, y clinica01 y comunidad01 a través de kit01 |
 | `inventarios/lab/` | El laboratorio virtual (`workspace/lab-virtual`), con `kitlab-kit01` como `kit01` y `kitlab-cliente` como VM de prueba |
 | `inventarios/kit/group_vars/all/red.yml` | Plan de direcciones (secciones 7 y 8). Se define solo aquí; el inventario del laboratorio lo enlaza |
+| `inventarios/kit/group_vars/all/maquinas.yml` | Definición de las VMs (vCPU, RAM, discos, MAC, IP, autostart) |
 | `inventarios/kit/group_vars/all/vault.yml` | Secretos cifrados con `ansible-vault`. Sus claves están en [`vault.example.yml`](vault.example.yml) |
 | `inventarios/*/host_vars/kit01.yml` | Nombres de interfaz de cada rol (`iface_wan`, `iface_lan`, D-14, R-08) y ajustes propios de kit01 |
 | `playbooks/comun.yml` | Aplica el rol `comun` a todos los hosts |
+| `playbooks/vms.yml` | Crea las VMs que falten en kit01 (rol `kit01_vms`) y les aplica el rol `comun` |
+| `playbooks/preparar-control.yml` | Crea `~/.config/kitsalud/ssh-pass` desde el vault, para el salto por kit01 |
 | `roles/comun/` | Base común de kit01 y las VMs |
+| `roles/kit01_vms/` | LV `vms`, imagen base y VMs con cloud-init (ver `kit01/libvirt/README.md`) |
 
 Los roles de cada componente viven en su repositorio (`<repo>/ansible/roles/`) y se encuentran por `roles_path`, así que los repositorios tienen que estar clonados uno al lado del otro, como en el espacio de trabajo.
 
@@ -41,14 +45,20 @@ openssl passwd -6                     # pide la contraseña del usuario comparti
 ansible-vault create inventarios/kit/group_vars/all/vault.yml   # mismas claves que vault.example.yml
 ```
 
+## Acceso a las VMs
+
+Las VMs solo aceptan SSH desde kit01 (D-18), así que Ansible salta por kit01. Los dos saltos usan la contraseña del usuario compartido y `sshpass` solo contesta un aviso, así que el salto por kit01 lee la contraseña de `~/.config/kitsalud/ssh-pass` (`600`, fuera del repositorio). Ese archivo lo crea `playbooks/preparar-control.yml` desde el vault, una vez por máquina de control. Expone lo mismo que `vault-pass`, que ya está en esa carpeta.
+
 ## Uso
 
 Siempre desde `platform/ansible/`, para que se lea `ansible.cfg`.
 
 ```bash
+ansible-playbook playbooks/preparar-control.yml          # una vez por máquina de control
 ansible all -m ping                                        # kit real
 ansible-playbook playbooks/comun.yml --check --diff        # qué cambiaría
 ansible-playbook playbooks/comun.yml                       # aplicar
+ansible-playbook playbooks/vms.yml                         # VMs
 ansible-playbook -i inventarios/lab playbooks/comun.yml    # laboratorio virtual
 ```
 
@@ -64,7 +74,7 @@ sudo systemd-run --on-active=120 --unit=ssh-rollback sh -c 'rm -f /etc/ssh/sshd_
 
 | Comando | Resultado esperado |
 |---|---|
-| `ansible all -m ping` | `pong` de kit01 |
+| `ansible all -m ping` | `pong` de kit01, clinica01 y comunidad01 |
 | `ansible-playbook playbooks/comun.yml` dos veces | La segunda termina con `changed=0` en todos los hosts |
 | `git grep -i -E 'password\|secret'` | Solo nombres de variables y textos, ningún valor |
 | `ansible all -b -m command -a 'sshd -T' \| grep -i permitrootlogin` | `permitrootlogin no` |
