@@ -27,6 +27,32 @@
   community.general.timezone:
     name: "{{ comun_zona_horaria }}"
 
+- name: Directorio de drop-ins de systemd-resolved
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: comun_dns_temporal | length > 0
+
+- name: DNS temporal (hasta BIND9 en kit01)
+  ansible.builtin.template:
+    src: resolved-dns-temporal.conf.j2
+    dest: /etc/systemd/resolved.conf.d/dns-temporal.conf
+    owner: root
+    group: root
+    mode: "0644"
+  when: comun_dns_temporal | length > 0
+  notify: Reiniciar systemd-resolved
+
+- name: Quitar el DNS temporal cuando ya no hace falta
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d/dns-temporal.conf
+    state: absent
+  when: comun_dns_temporal | length == 0
+  notify: Reiniciar systemd-resolved
+
 - name: ufw con entrada denegada y SSH solo desde kit01
   when: comun_ufw | bool
   block:

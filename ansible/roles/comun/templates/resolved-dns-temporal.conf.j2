@@ -1,0 +1,4 @@
+# {{ ansible_managed }} (rol comun)
+# DNS temporal hasta que BIND9 responda en kit01 (platform#5)
+[Resolve]
+DNS={{ comun_dns_temporal | join(' ') }}
