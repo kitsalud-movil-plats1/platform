@@ -1,0 +1,13 @@
+---
+# Volumen propio para los discos de las VMs (el LV de / tiene 100 GiB)
+kit01_vms_lv_vg: ubuntu-vg
+kit01_vms_lv_nombre: vms
+kit01_vms_lv_tamano: 320g
+kit01_vms_dir: /var/lib/libvirt/images
+
+# Imagen cloud de Ubuntu 24.04, fija (la misma del laboratorio virtual)
+kit01_vms_imagen_serie: release-20260926
+kit01_vms_imagen_url: "https://cloud-images.ubuntu.com/releases/noble/{{ kit01_vms_imagen_serie }}"
+kit01_vms_imagen_archivo: ubuntu-24.04-server-cloudimg-amd64.img
+
+kit01_vms_bridge: "{{ redes.servidores.interfaz }}"

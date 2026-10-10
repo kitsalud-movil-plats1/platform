@@ -1,0 +1,22 @@
+---
+# VMs del kit (D-19, sección 10.1). MAC fija para que cada VM conserve su
+# identidad si se mueve a otro equipo (10.4).
+maquinas_virtuales:
+  - nombre: clinica01
+    vcpu: 4
+    ram_mb: 7168
+    disco_sistema: 40G
+    disco_datos: 120G
+    mac: "52:54:00:20:00:11"
+    ipv4: "{{ equipos.clinica01.ipv4 }}"
+    ipv6: "{{ equipos.clinica01.ipv6 }}"
+    autostart: true
+  - nombre: comunidad01
+    vcpu: 2
+    ram_mb: 2560
+    disco_sistema: 20G
+    disco_datos: 120G
+    mac: "52:54:00:20:00:12"
+    ipv4: "{{ equipos.comunidad01.ipv4 }}"
+    ipv6: "{{ equipos.comunidad01.ipv6 }}"
+    autostart: true

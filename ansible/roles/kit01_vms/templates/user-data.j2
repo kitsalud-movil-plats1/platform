@@ -1,0 +1,27 @@
+#cloud-config
+# {{ ansible_managed }} (rol kit01_vms). Solo se usa en el primer arranque.
+hostname: {{ vm.nombre }}
+fqdn: {{ vm.nombre }}.{{ dominio }}
+manage_etc_hosts: true
+timezone: {{ comun_zona_horaria | default('America/Bogota') }}
+users:
+  - name: {{ admin_usuario }}
+    groups: [sudo]
+    shell: /bin/bash
+    lock_passwd: false
+    hashed_passwd: "{{ vault_admin_password_hash }}"
+ssh_pwauth: true
+disable_root: true
+package_update: false
+package_upgrade: false
+fs_setup:
+  - label: datos
+    filesystem: ext4
+    device: /dev/vdb
+    partition: none
+    overwrite: false
+mounts:
+  - [LABEL=datos, /srv, ext4, "defaults,nofail", "0", "2"]
+runcmd:
+  # Después del primer arranque la configuración la maneja Ansible
+  - [touch, /etc/cloud/cloud-init.disabled]

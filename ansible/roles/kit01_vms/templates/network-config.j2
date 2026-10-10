@@ -1,0 +1,22 @@
+# {{ ansible_managed }} (rol kit01_vms)
+version: 2
+ethernets:
+  eth0:
+    match:
+      macaddress: "{{ vm.mac }}"
+    set-name: eth0
+    dhcp4: false
+    dhcp6: false
+    accept-ra: false
+    addresses:
+      - {{ vm.ipv4 }}/{{ redes.servidores.ipv4.split('/')[1] }}
+      - "{{ vm.ipv6 }}/{{ redes.servidores.ipv6.split('/')[1] }}"
+    routes:
+      - to: default
+        via: {{ redes.servidores.gw4 }}
+      - to: "::/0"
+        via: "{{ gw_link_local }}"
+        on-link: true
+    nameservers:
+      addresses: [{{ servicios_kit01.ipv4 }}, "{{ servicios_kit01.ipv6 }}"]
+      search: [{{ dominio }}]

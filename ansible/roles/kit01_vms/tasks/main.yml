@@ -1,0 +1,46 @@
+---
+- name: LV para los discos de las VMs
+  community.general.lvol:
+    vg: "{{ kit01_vms_lv_vg }}"
+    lv: "{{ kit01_vms_lv_nombre }}"
+    size: "{{ kit01_vms_lv_tamano }}"
+    shrink: false
+
+- name: Sistema de archivos del LV
+  community.general.filesystem:
+    dev: "/dev/{{ kit01_vms_lv_vg }}/{{ kit01_vms_lv_nombre }}"
+    fstype: ext4
+    opts: "-L {{ kit01_vms_lv_nombre }}"
+
+- name: Montaje del LV (nofail, para que kit01 arranque aunque falle)
+  ansible.posix.mount:
+    path: "{{ kit01_vms_dir }}"
+    src: "/dev/{{ kit01_vms_lv_vg }}/{{ kit01_vms_lv_nombre }}"
+    fstype: ext4
+    opts: defaults,nofail
+    state: mounted
+
+- name: Directorios de imágenes base y de cloud-init
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0711"
+  loop:
+    - "{{ kit01_vms_dir }}/base"
+    - "{{ kit01_vms_dir }}/cloud-init"
+
+- name: Imagen cloud de Ubuntu 24.04, verificada con SHA256SUMS
+  ansible.builtin.get_url:
+    url: "{{ kit01_vms_imagen_url }}/{{ kit01_vms_imagen_archivo }}"
+    dest: "{{ kit01_vms_dir }}/base/{{ kit01_vms_imagen_serie }}-{{ kit01_vms_imagen_archivo }}"
+    checksum: "sha256:{{ kit01_vms_imagen_url }}/SHA256SUMS"
+    mode: "0644"
+
+- name: Crear cada VM que falte
+  ansible.builtin.include_tasks: vm.yml
+  loop: "{{ maquinas_virtuales }}"
+  loop_control:
+    loop_var: vm
+    label: "{{ vm.nombre }}"

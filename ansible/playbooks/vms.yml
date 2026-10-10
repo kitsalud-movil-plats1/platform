@@ -1,0 +1,13 @@
+---
+# VMs del kit (platform#7): primero se crean en kit01 y después se les aplica el rol comun
+- name: Crear las VMs en kit01
+  hosts: kit
+  become: true
+  roles:
+    - kit01_vms
+
+- name: Base común de las VMs
+  hosts: vms
+  become: true
+  roles:
+    - comun
