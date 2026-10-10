@@ -13,3 +13,7 @@ ansible_ssh_common_args: >-
   -o StrictHostKeyChecking=accept-new
   -o ProxyCommand="sshpass -f {{ lookup('env', 'HOME') }}/.config/kitsalud/ssh-pass
   ssh -o StrictHostKeyChecking=accept-new -W %h:%p {{ admin_usuario }}@{{ hostvars['kit01'].ansible_host }}"
+
+# DNS del sitio mientras no exista BIND9 en kit01 (platform#5); el firewall
+# deja salir el 53 de las VMs por la WAN solo hasta entonces
+comun_dns_temporal: [192.168.215.20, 192.168.215.30]

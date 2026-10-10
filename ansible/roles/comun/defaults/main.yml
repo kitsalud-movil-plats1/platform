@@ -14,3 +14,7 @@ comun_chrony_cliente: false
 comun_chrony_servidor: "ntp.{{ dominio | default('salud.movil') }}"
 comun_rsyslog_reenvio: false
 comun_rsyslog_destino: "{{ servicios_kit01.ipv4 | default('10.20.20.10') }}"
+
+# DNS temporal mientras no exista BIND9 en kit01 (platform#5). Con la lista
+# vacía se borra el drop-in y vuelve a usarse solo el DNS del kit.
+comun_dns_temporal: []

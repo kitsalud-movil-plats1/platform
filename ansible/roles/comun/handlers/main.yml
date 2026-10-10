@@ -20,3 +20,8 @@
   ansible.builtin.systemd_service:
     name: rsyslog
     state: restarted
+
+- name: Reiniciar systemd-resolved
+  ansible.builtin.systemd_service:
+    name: systemd-resolved
+    state: restarted
