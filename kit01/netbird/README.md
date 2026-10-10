@@ -13,6 +13,8 @@ curl -fsSL https://pkgs.netbird.io/install.sh | sh
 
 La clave de registro (setup key) no se versiona y se guarda en `ansible-vault`.
 
+El paquete está retenido (`sudo apt-mark hold netbird`), así que `apt full-upgrade` no lo cambia ni lo reinicia. Se actualiza solo en una tarea propia, con `sudo apt-mark unhold netbird` y `sudo apt-get install netbird`, y se vuelve a retener.
+
 ## Uso
 
 ```bash
