@@ -7,4 +7,9 @@ comun_ufw_ssh_origenes:
   - "{{ redes.servidores.gw6 }}"
   - "{{ servicios_kit01.ipv6 }}"
   - "{{ gw_link_local }}"
-# El salto por kit01 se define en platform#7, cuando existan las VMs.
+# Salto por kit01. sshpass lee la contraseña de ~/.config/kitsalud/ssh-pass
+# (playbooks/preparar-control.yml); la de la VM la pone Ansible desde el vault.
+ansible_ssh_common_args: >-
+  -o StrictHostKeyChecking=accept-new
+  -o ProxyCommand="sshpass -f {{ lookup('env', 'HOME') }}/.config/kitsalud/ssh-pass
+  ssh -o StrictHostKeyChecking=accept-new -W %h:%p {{ admin_usuario }}@{{ hostvars['kit01'].ansible_host }}"

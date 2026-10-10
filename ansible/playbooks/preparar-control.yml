@@ -1,0 +1,23 @@
+---
+# Prepara la máquina de cada integrante para llegar a las VMs a través de kit01.
+# El salto por kit01 usa sshpass con este archivo (600, fuera del repositorio),
+# que sale del vault. Expone lo mismo que ~/.config/kitsalud/vault-pass.
+- name: Preparar la máquina de control
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    dir_control: "{{ lookup('env', 'HOME') }}/.config/kitsalud"
+  tasks:
+    - name: Directorio de configuración local
+      ansible.builtin.file:
+        path: "{{ dir_control }}"
+        state: directory
+        mode: "0700"
+
+    - name: Contraseña para el salto por kit01
+      ansible.builtin.copy:
+        content: "{{ vault_admin_password }}"
+        dest: "{{ dir_control }}/ssh-pass"
+        mode: "0600"
+      no_log: true

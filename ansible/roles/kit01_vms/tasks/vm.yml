@@ -1,0 +1,82 @@
+---
+- name: "{{ vm.nombre }}: ¿existe?"
+  ansible.builtin.command: virsh -c qemu:///system dominfo {{ vm.nombre }}
+  register: vm_info
+  changed_when: false
+  failed_when: false
+
+- name: "{{ vm.nombre }}: crear"
+  when: vm_info.rc != 0
+  block:
+    - name: "{{ vm.nombre }}: disco de sistema (qcow2 independiente)"
+      ansible.builtin.shell: >
+        qemu-img convert -O qcow2
+        {{ kit01_vms_dir }}/base/{{ kit01_vms_imagen_serie }}-{{ kit01_vms_imagen_archivo }}
+        {{ kit01_vms_dir }}/{{ vm.nombre }}-sistema.qcow2 &&
+        qemu-img resize {{ kit01_vms_dir }}/{{ vm.nombre }}-sistema.qcow2 {{ vm.disco_sistema }}
+      args:
+        creates: "{{ kit01_vms_dir }}/{{ vm.nombre }}-sistema.qcow2"
+
+    - name: "{{ vm.nombre }}: disco de datos"
+      ansible.builtin.command: >
+        qemu-img create -f qcow2 {{ kit01_vms_dir }}/{{ vm.nombre }}-datos.qcow2 {{ vm.disco_datos }}
+      args:
+        creates: "{{ kit01_vms_dir }}/{{ vm.nombre }}-datos.qcow2"
+
+    - name: "{{ vm.nombre }}: directorio de cloud-init"
+      ansible.builtin.file:
+        path: "{{ kit01_vms_dir }}/cloud-init/{{ vm.nombre }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+    - name: "{{ vm.nombre }}: user-data y network-config"
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "{{ kit01_vms_dir }}/cloud-init/{{ vm.nombre }}/{{ item }}"
+        owner: root
+        group: root
+        mode: "0600"
+      loop: [user-data, network-config]
+
+    - name: "{{ vm.nombre }}: olvidar la clave SSH de una VM anterior con la misma IP"
+      ansible.builtin.known_hosts:
+        name: "{{ item }}"
+        state: absent
+      loop: ["{{ vm.ipv4 }}", "{{ vm.ipv6 }}"]
+      delegate_to: localhost
+      become: false
+
+    - name: "{{ vm.nombre }}: virt-install"
+      ansible.builtin.command: >
+        virt-install --connect qemu:///system
+        --name {{ vm.nombre }} --memory {{ vm.ram_mb }} --vcpus {{ vm.vcpu }}
+        --cpu host-passthrough --osinfo ubuntu24.04 --import
+        --disk path={{ kit01_vms_dir }}/{{ vm.nombre }}-sistema.qcow2,format=qcow2,bus=virtio
+        --disk path={{ kit01_vms_dir }}/{{ vm.nombre }}-datos.qcow2,format=qcow2,bus=virtio
+        --network bridge={{ kit01_vms_bridge }},mac={{ vm.mac }},model=virtio
+        --cloud-init user-data={{ kit01_vms_dir }}/cloud-init/{{ vm.nombre }}/user-data,network-config={{ kit01_vms_dir }}/cloud-init/{{ vm.nombre }}/network-config
+        --graphics none --noautoconsole
+      changed_when: true
+
+    - name: "{{ vm.nombre }}: esperar el SSH de la VM"
+      ansible.builtin.wait_for:
+        host: "{{ vm.ipv4 }}"
+        port: 22
+        search_regex: OpenSSH
+        timeout: 600
+
+  always:
+    # user-data lleva el hash de la contraseña; no se deja en disco
+    - name: "{{ vm.nombre }}: borrar los archivos de cloud-init"
+      ansible.builtin.file:
+        path: "{{ kit01_vms_dir }}/cloud-init/{{ vm.nombre }}"
+        state: absent
+
+- name: "{{ vm.nombre }}: autostart"
+  ansible.builtin.command: virsh -c qemu:///system autostart {{ vm.nombre }} {{ '' if vm.autostart else '--disable' }}
+  vars:
+    autostart_actual: "{{ vm_info.stdout is search('Autostart:\\s+enable') }}"
+  when: (vm_info.rc != 0) or (autostart_actual | bool) != (vm.autostart | bool)
+  changed_when: true

@@ -31,6 +31,7 @@ En la misma sesión se verificaron los equipos de red, sw01 con RouterOS 7.13.5 
 | Red | Netplan en `network/kit01/netplan/`, reenvío en `network/kit01/sysctl/` y firewall en `network/kit01/nftables/` |
 | NetBird | 0.80.0, conectado y retenido con `apt-mark hold`, ver [`netbird/`](netbird/) |
 | Virtualización | QEMU 8.2.2 (`qemu-system-x86`, que provee `qemu-kvm`), libvirt 10.0.0 y virt-install 4.1.0. La red `default` de libvirt (`virbr0`) está detenida y sin arranque automático, porque las VMs van a `br-srv` y `br-com` |
+| VMs | `clinica01` y `comunidad01`, con sus discos en el LV `ubuntu-vg/vms` (320 GiB) montado en `/var/lib/libvirt/images`; ver [`libvirt/`](libvirt/) |
 
 ### Cómo se instaló
 
