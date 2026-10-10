@@ -12,9 +12,9 @@ Router/firewall e hipervisor del kit (D-02, D-04, sección 6 del documento). La 
 | Virtualización | **VT-x activa** | `lscpu \| grep -i virt` |
 | RAM | 15 GiB utilizables (16 GB) | `free -h` |
 | Disco | NVMe de 476,9 GiB (500 GB), con `/boot/efi` de 1 GB, `/boot` de 2 GB y LVM `ubuntu-vg` de 473,9 GiB con `/` de 100 GiB (el resto del grupo queda libre para las VMs) | `lsblk` |
-| NIC 1 | `enp170s0`, MAC `78:55:36:09:07:0b`, Realtek RTL8111 (`r8169`) → **WAN** (futuro `wan0`) | `ip -br link`, `lspci -k` |
-| NIC 2 | `enp171s0`, MAC `78:55:36:09:07:0a`, Realtek RTL8111 (`r8169`) → **trunk a sw01 ether1** (futuro `lan0`) | `ip -br link`, `lspci -k` |
-| "Restore on AC power loss" | Pendiente de revisar en la BIOS | - |
+| NIC 1 | `enp170s0`, MAC `78:55:36:09:07:0b`, Realtek RTL8111 (`r8169`) → **WAN** (rol `wan0`) | `ip -br link`, `lspci -k` |
+| NIC 2 | `enp171s0`, MAC `78:55:36:09:07:0a`, Realtek RTL8111 (`r8169`) → **trunk a sw01 ether1** (rol `lan0`) | `ip -br link`, `lspci -k` |
+| "Restore on AC power loss" | Sin revisar; opcional, porque exige ir al laboratorio | - |
 | Disco USB de backups | No conectado todavía | - |
 
 En la misma sesión se verificaron los equipos de red, sw01 con RouterOS 7.13.5 (RouterBOOT `al64` 7.13.5); AP con firmware 3.16.9 Build 150723.
@@ -35,6 +35,6 @@ En la misma sesión se verificaron los equipos de red, sw01 con RouterOS 7.13.5 
 
 - Hostname `kit01`.
 - `PermitRootLogin no`.
-- Nombres `wan0`/`lan0` por MAC (con reinicio) y comprobar que se mantienen.
 - `apt full-upgrade`, `qemu-kvm`, `libvirt-daemon-system`, `virtinst` y `virt-host-validate`.
-- En la BIOS, "Restore on AC power loss".
+
+Todo se hace en remoto por NetBird. Las NIC no se renombran (D-14) y, si `apt full-upgrade` pide reiniciar, el reinicio se deja para una visita con alguien en el laboratorio (P12).
