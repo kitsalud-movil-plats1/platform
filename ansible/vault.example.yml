@@ -5,4 +5,4 @@ vault_admin_password: ""        # usuario de administración compartido (D-18)
 vault_admin_password_hash: ""   # hash SHA-512 de la misma contraseña (openssl passwd -6)
 vault_sw01_password: ""         # usuario admin de sw01
 vault_ap01_password: ""         # usuario admin de ap01 (R-12)
-vault_dhis2_db_password: ""     # usuario de PostgreSQL de DHIS2 en clinica01 (apps#1)
+vault_dhis2_db_password: ""     # usuario dhis de PostgreSQL de DHIS2 en clinica01 (apps#1)
