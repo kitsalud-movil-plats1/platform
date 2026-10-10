@@ -26,26 +26,23 @@ En la misma sesión se verificaron los equipos de red, sw01 con RouterOS 7.13.5 
 | Sistema | Ubuntu Server 24.04.5 LTS con LVM, actualizado el 2026-10-10. Corre el kernel 6.8.0-139 y el 6.8.0-146 queda instalado para el próximo arranque |
 | Hostname | `kit01` (`kit01.salud.movil` en `/etc/hosts`). cloud-init está desactivado, así que no lo cambia al arrancar |
 | Usuario de administración | `kitsalud`, compartido por el grupo (D-18), con sudo y en los grupos `libvirt` y `kvm` |
-| SSH | Con contraseña y `PermitRootLogin no`, con el drop-in [`ssh/10-kit01.conf`](ssh/10-kit01.conf). Escucha en IPv4 e IPv6 |
-| Red | Netplan provisional, en `network/kit01/netplan/` |
+| SSH | Con contraseña y `PermitRootLogin no`, con el drop-in `10-comun.conf` del rol `comun` de Ansible ([`../ansible/`](../ansible/)). Escucha en IPv4 e IPv6 |
+| Zona horaria | `America/Bogota`, del rol `comun` |
+| Red | Netplan en `network/kit01/netplan/`, reenvío en `network/kit01/sysctl/` y firewall en `network/kit01/nftables/` |
 | NetBird | 0.80.0, conectado y retenido con `apt-mark hold`, ver [`netbird/`](netbird/) |
 | Virtualización | QEMU 8.2.2 (`qemu-system-x86`, que provee `qemu-kvm`), libvirt 10.0.0 y virt-install 4.1.0. La red `default` de libvirt (`virbr0`) está detenida y sin arranque automático, porque las VMs van a `br-srv` y `br-com` |
 
 ### Cómo se instaló
 
-Todo se hizo en remoto por NetBird (D-23), sin tocar `enp170s0`, netplan, nftables ni NetBird. La copia de lo anterior quedó en `/root/respaldo-platform2/`.
+Todo se hizo en remoto por NetBird (D-23), sin tocar `enp170s0`, netplan, nftables ni NetBird. La copia de lo anterior quedó en `/root/respaldo-platform2/`. Lo que hoy maneja Ansible (SSH, zona horaria y usuario) está en el rol `comun`; lo demás se pasará a Ansible en su propia tarea.
 
 ```bash
 # Hostname, en un solo comando para que sudo siga resolviendo el nombre
 sudo hostnamectl set-hostname kit01 && \
   sudo sed -i 's/^127\.0\.1\.1.*/127.0.1.1 kit01.salud.movil kit01/' /etc/hosts
 
-# SSH sin root, con restauración programada que se cancela si entra una sesión nueva
-sudo install -o root -g root -m 0644 ssh/10-kit01.conf /etc/ssh/sshd_config.d/10-kit01.conf
-sudo sshd -t
-sudo systemd-run --on-active=120 --unit=ssh-rollback sh -c 'rm -f /etc/ssh/sshd_config.d/10-kit01.conf && systemctl reload ssh'
-sudo systemctl reload ssh
-sudo systemctl stop ssh-rollback.timer   # solo si la sesión nueva entra
+# SSH sin root, zona horaria y usuario compartido: rol comun de Ansible (platform/ansible)
+#   ansible-playbook playbooks/comun.yml
 
 # Actualización sin reiniciar. systemd-run evita que dpkg quede a medias si se corta la sesión
 sudo apt-mark hold netbird
@@ -82,7 +79,7 @@ sudo usermod -aG libvirt,kvm kitsalud
 ### Diagnóstico
 
 - **`sudo` avisa "unable to resolve host".** Falta la línea `127.0.1.1 kit01.salud.movil kit01` en `/etc/hosts`.
-- **`sshd -T` no muestra `permitrootlogin no`.** Revisar que exista `/etc/ssh/sshd_config.d/10-kit01.conf`. sshd usa el primer valor que lee, así que el nombre del archivo debe ordenarse antes de `50-cloud-init.conf`.
+- **`sshd -T` no muestra `permitrootlogin no`.** Revisar que exista `/etc/ssh/sshd_config.d/10-comun.conf` (rol `comun`). sshd usa el primer valor que lee, así que el nombre del archivo debe ordenarse antes de `50-cloud-init.conf`.
 - **Aparece `virbr0` o reglas dentro de las cadenas `LIBVIRT_*`.** La red `default` volvió a arrancar; se detiene con `virsh net-destroy default` y `virsh net-autostart --disable default`. Las cadenas `LIBVIRT_*` vacías y sus saltos son normales, porque libvirt las crea al iniciar aunque no haya redes activas.
 - **Una actualización quedó a medias.** `journalctl -u kit01-apt` muestra dónde se detuvo y `sudo dpkg --configure -a` la termina.
 
