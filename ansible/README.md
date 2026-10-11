@@ -21,6 +21,9 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `inventarios/kit/group_vars/all/dns.yml` | Nombres y PTR de las zonas DNS del kit |
 | `playbooks/dns.yml` | BIND9 en kit01 (rol `bind9`) |
 | `roles/bind9/` | BIND9 autoritativo y recursivo (ver `kit01/bind9/README.md`) |
+| `inventarios/kit/group_vars/all/paquetes.yml` | Versiones fijas que usan varios roles (`chrony`) |
+| `playbooks/ntp.yml` | Chrony en kit01 (rol `chrony`) |
+| `roles/chrony/` | Servidor NTP del kit (ver `kit01/chrony/README.md`) |
 | `roles/kit01_vms/` | LV `vms`, imagen base y VMs con cloud-init (ver `kit01/libvirt/README.md`) |
 
 Los roles de cada componente viven en su repositorio (`<repo>/ansible/roles/`) y se encuentran por `roles_path`, así que los repositorios tienen que estar clonados uno al lado del otro, como en el espacio de trabajo.
@@ -33,7 +36,7 @@ Los roles de cada componente viven en su repositorio (`<repo>/ansible/roles/`) y
 | sshd sin root | Todos | `/etc/ssh/sshd_config.d/10-comun.conf` con `PermitRootLogin no`. Borra el `10-kit01.conf` de platform#2. Antes de recargar valida con `sshd -t` |
 | Zona horaria | Todos | `America/Bogota` (`comun_zona_horaria`) |
 | ufw | Solo el grupo `vms` (`comun_ufw`) | Entrada denegada y SSH solo desde kit01 (`comun_ufw_ssh_origenes`). En kit01 filtra nftables y ufw no se toca |
-| Cliente Chrony | Apagado (`comun_chrony_cliente`) | Fuente `ntp.salud.movil`; se enciende en platform#6 |
+| Cliente Chrony | Grupo `vms` (`comun_chrony_cliente`) | `chrony` con versión fija y `hold`, y un `chrony.conf` con `ntp.salud.movil` como única fuente |
 | Reenvío de rsyslog | Apagado (`comun_rsyslog_reenvio`) | TCP 514 hacia `10.20.20.10` con cola; se enciende en observability#3 |
 | DNS temporal | Vacío (`comun_dns_temporal`) | Si tiene valores, escribe un drop-in de `systemd-resolved` con esos DNS; vacío, lo borra. Se usó en las VMs hasta que existió BIND9 |
 
