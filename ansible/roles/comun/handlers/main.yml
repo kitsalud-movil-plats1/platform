@@ -12,9 +12,10 @@
     state: reloaded
   listen: Recargar sshd
 
-- name: Recargar fuentes de chrony
-  ansible.builtin.command: chronyc reload sources
-  changed_when: true
+- name: Reiniciar chrony
+  ansible.builtin.systemd_service:
+    name: chrony
+    state: restarted
 
 - name: Reiniciar rsyslog
   ansible.builtin.systemd_service:

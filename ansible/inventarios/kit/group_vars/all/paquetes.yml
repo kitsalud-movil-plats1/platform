@@ -1,0 +1,3 @@
+---
+# Versiones fijas de paquetes que usan varios roles (AGENTS.md, sección 5)
+version_chrony: 4.5-1ubuntu4.2

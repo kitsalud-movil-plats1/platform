@@ -13,3 +13,6 @@ ansible_ssh_common_args: >-
   -o StrictHostKeyChecking=accept-new
   -o ProxyCommand="sshpass -f {{ lookup('env', 'HOME') }}/.config/kitsalud/ssh-pass
   ssh -o StrictHostKeyChecking=accept-new -W %h:%p {{ admin_usuario }}@{{ hostvars['kit01'].ansible_host }}"
+
+# Cliente NTP del kit (platform#6)
+comun_chrony_cliente: true
