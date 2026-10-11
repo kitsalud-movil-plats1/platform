@@ -1,0 +1,15 @@
+// {{ ansible_managed }} (rol bind9, sección 9)
+zone "{{ dns_zona }}" {
+	type primary;
+	file "/etc/bind/zonas/db.{{ dns_zona }}";
+};
+
+zone "{{ dns_zona_inversa4 }}" {
+	type primary;
+	file "/etc/bind/zonas/db.{{ dns_zona_inversa4 }}";
+};
+
+zone "{{ dns_zona_inversa6 }}" {
+	type primary;
+	file "/etc/bind/zonas/db.{{ dns_zona_inversa6 }}";
+};

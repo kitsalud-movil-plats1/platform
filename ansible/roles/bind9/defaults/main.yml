@@ -1,0 +1,7 @@
+---
+# BIND9 de Ubuntu 24.04 con versión fija (AGENTS.md, sección 5)
+bind9_version: 1:9.18.39-0ubuntu0.24.04.7
+bind9_escucha4: ["{{ servicios_kit01.ipv4 }}"]
+bind9_escucha6: ["{{ servicios_kit01.ipv6 }}"]
+bind9_ttl: 3600
+bind9_log_dir: /var/log/named

@@ -1,0 +1,87 @@
+---
+# El paquete se instala sin arrancar named: con la configuración de fábrica
+# escucharía en todas las direcciones, también donde escucha NetBird (wt0).
+- name: Paquetes instalados
+  ansible.builtin.package_facts:
+
+- name: Impedir que el paquete arranque named al instalarse
+  ansible.builtin.copy:
+    dest: /usr/sbin/policy-rc.d
+    content: "#!/bin/sh\nexit 101\n"
+    mode: "0755"
+    force: false
+  register: bind9_policy
+  when: "'bind9' not in ansible_facts.packages"
+
+- name: BIND9 con versión fija
+  block:
+    - name: Paquete bind9
+      ansible.builtin.apt:
+        name: "bind9={{ bind9_version }}"
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+  always:
+    - name: Quitar el bloqueo de arranque
+      ansible.builtin.file:
+        path: /usr/sbin/policy-rc.d
+        state: absent
+      when: bind9_policy is changed
+
+- name: Retener bind9
+  ansible.builtin.dpkg_selections:
+    name: bind9
+    selection: hold
+
+- name: Directorios de zonas y de logs
+  ansible.builtin.file:
+    path: "{{ item.ruta }}"
+    state: directory
+    owner: "{{ item.dueno }}"
+    group: bind
+    mode: "{{ item.modo }}"
+  loop:
+    - { ruta: /etc/bind/zonas, dueno: root, modo: "0755" }
+    - { ruta: "{{ bind9_log_dir }}", dueno: bind, modo: "0750" }
+
+- name: Opciones y zonas declaradas
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/bind/{{ item }}"
+    owner: root
+    group: bind
+    mode: "0644"
+  loop: [named.conf.options, named.conf.local]
+  notify: Recargar named
+
+- name: Zona directa
+  ansible.builtin.template:
+    src: db.zona.j2
+    dest: "/etc/bind/zonas/db.{{ dns_zona }}"
+    owner: root
+    group: bind
+    mode: "0644"
+    validate: "named-checkzone {{ dns_zona }} %s"
+  notify: Recargar named
+
+- name: Zonas inversas
+  ansible.builtin.template:
+    src: db.inversa.j2
+    dest: "/etc/bind/zonas/db.{{ item.zona }}"
+    owner: root
+    group: bind
+    mode: "0644"
+    validate: "named-checkzone {{ item.zona }} %s"
+  vars:
+    zona_inversa: "{{ item.zona }}"
+    inversa_v6: "{{ item.v6 }}"
+  loop:
+    - { zona: "{{ dns_zona_inversa4 }}", v6: false }
+    - { zona: "{{ dns_zona_inversa6 }}", v6: true }
+  notify: Recargar named
+
+- name: named activo al arrancar
+  ansible.builtin.systemd_service:
+    name: named
+    enabled: true
+    state: started
