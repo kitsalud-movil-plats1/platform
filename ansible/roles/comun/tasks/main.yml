@@ -78,19 +78,32 @@
 - name: Cliente Chrony hacia kit01
   when: comun_chrony_cliente | bool
   block:
-    - name: Paquete chrony
+    - name: Paquete chrony con versión fija (reemplaza a systemd-timesyncd)
       ansible.builtin.apt:
-        name: chrony
+        name: "chrony={{ version_chrony }}"
         state: present
+        update_cache: true
+        cache_valid_time: 3600
 
-    - name: Fuente de hora del kit
+    - name: Retener chrony
+      ansible.builtin.dpkg_selections:
+        name: chrony
+        selection: hold
+
+    - name: Solo ntp.salud.movil como fuente, sin los pools de Ubuntu
       ansible.builtin.template:
-        src: chrony-kitsalud.sources.j2
-        dest: /etc/chrony/sources.d/kitsalud.sources
+        src: chrony-cliente.conf.j2
+        dest: /etc/chrony/chrony.conf
         owner: root
         group: root
         mode: "0644"
-      notify: Recargar fuentes de chrony
+      notify: Reiniciar chrony
+
+    - name: Quitar la fuente que usaba una versión anterior del rol
+      ansible.builtin.file:
+        path: /etc/chrony/sources.d/kitsalud.sources
+        state: absent
+      notify: Reiniciar chrony
 
 - name: Reenvío de rsyslog hacia kit01
   when: comun_rsyslog_reenvio | bool

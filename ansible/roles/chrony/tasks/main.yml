@@ -1,0 +1,27 @@
+---
+- name: Chrony con versión fija (reemplaza a systemd-timesyncd)
+  ansible.builtin.apt:
+    name: "chrony={{ version_chrony }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Retener chrony
+  ansible.builtin.dpkg_selections:
+    name: chrony
+    selection: hold
+
+- name: Configuración del servidor
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: /etc/chrony/chrony.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reiniciar chrony
+
+- name: Chrony activo al arrancar
+  ansible.builtin.systemd_service:
+    name: chrony
+    enabled: true
+    state: started

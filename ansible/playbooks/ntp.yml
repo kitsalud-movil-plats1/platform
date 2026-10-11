@@ -1,0 +1,7 @@
+---
+# Servidor NTP del kit en kit01 (platform#6); los clientes de las VMs van en el rol comun
+- name: Chrony en kit01
+  hosts: kit
+  become: true
+  roles:
+    - chrony
