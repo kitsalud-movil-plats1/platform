@@ -1,0 +1,39 @@
+---
+# Nombres del kit (sección 9). Las direcciones salen de red.yml; aquí solo se
+# dice qué nombre apunta a qué equipo.
+dns_zona: "{{ dominio }}"
+dns_zona_inversa4: 20.10.in-addr.arpa
+dns_zona_inversa6: 6.1.7.d.e.7.c.f.a.5.d.f.ip6.arpa
+
+dns_registros:
+  - { nombre: ns1, ipv4: "{{ servicios_kit01.ipv4 }}", ipv6: "{{ servicios_kit01.ipv6 }}" }
+  - { nombre: ntp, ipv4: "{{ servicios_kit01.ipv4 }}", ipv6: "{{ servicios_kit01.ipv6 }}" }
+  - { nombre: monitoreo, ipv4: "{{ servicios_kit01.ipv4 }}", ipv6: "{{ servicios_kit01.ipv6 }}" }
+  - { nombre: kit01, ipv4: "{{ redes.interna.gw4 }}", ipv6: "{{ redes.interna.gw6 }}" }
+  - { nombre: sw01, ipv4: "{{ equipos.sw01.ipv4 }}", ipv6: "{{ equipos.sw01.ipv6 }}" }
+  - { nombre: ap01, ipv4: "{{ equipos.ap01.ipv4 }}" }
+  - { nombre: portal, ipv4: "{{ redes.comunidad.gw4 }}", ipv6: "{{ redes.comunidad.gw6 }}" }
+  - { nombre: clinica01, ipv4: "{{ equipos.clinica01.ipv4 }}", ipv6: "{{ equipos.clinica01.ipv6 }}" }
+  - { nombre: pacientes, ipv4: "{{ equipos.clinica01.ipv4 }}", ipv6: "{{ equipos.clinica01.ipv6 }}" }
+  - { nombre: archivos, ipv4: "{{ equipos.clinica01.ipv4 }}", ipv6: "{{ equipos.clinica01.ipv6 }}" }
+  - { nombre: consultas, ipv4: "{{ equipos.clinica01.ipv4 }}", ipv6: "{{ equipos.clinica01.ipv6 }}" }
+  # Registro normal hasta que exista Samba AD (platform#8), que delega ad.salud.movil
+  - { nombre: dc01.ad, ipv4: "{{ equipos.clinica01.ipv4 }}", ipv6: "{{ equipos.clinica01.ipv6 }}" }
+  - { nombre: comunidad01, ipv4: "{{ equipos.comunidad01.ipv4 }}", ipv6: "{{ equipos.comunidad01.ipv6 }}" }
+  - { nombre: biblioteca, ipv4: "{{ equipos.comunidad01.ipv4 }}", ipv6: "{{ equipos.comunidad01.ipv6 }}" }
+  - { nombre: videos, ipv4: "{{ equipos.comunidad01.ipv4 }}", ipv6: "{{ equipos.comunidad01.ipv6 }}" }
+  - { nombre: registro, ipv4: "{{ equipos.comunidad01.ipv4 }}", ipv6: "{{ equipos.comunidad01.ipv6 }}" }
+
+# Un PTR por dirección (inversas IPv4 e IPv6)
+dns_ptr:
+  - { nombre: kit01, ips: ["{{ redes.interna.gw4 }}", "{{ redes.interna.gw6 }}", "{{ redes.servidores.gw4 }}", "{{ redes.servidores.gw6 }}"] }
+  - { nombre: ns1, ips: ["{{ servicios_kit01.ipv4 }}", "{{ servicios_kit01.ipv6 }}"] }
+  - { nombre: portal, ips: ["{{ redes.comunidad.gw4 }}", "{{ redes.comunidad.gw6 }}"] }
+  - { nombre: sw01, ips: ["{{ equipos.sw01.ipv4 }}", "{{ equipos.sw01.ipv6 }}"] }
+  - { nombre: ap01, ips: ["{{ equipos.ap01.ipv4 }}"] }
+  - { nombre: clinica01, ips: ["{{ equipos.clinica01.ipv4 }}", "{{ equipos.clinica01.ipv6 }}"] }
+  - { nombre: comunidad01, ips: ["{{ equipos.comunidad01.ipv4 }}", "{{ equipos.comunidad01.ipv6 }}"] }
+
+# Recursión solo para el kit (sección 9) y reenviadores con Internet
+dns_recursion: ["{{ red_kit4 }}", "{{ ula_kit6 }}", localhost]
+dns_reenviadores: [1.1.1.1, 9.9.9.9]

@@ -18,6 +18,9 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `playbooks/clinica01.yml` | Aplicaciones de clinica01 con los roles `docker` y `dhis2` del repositorio `apps` (`-e dhis2_estado=stopped` para detener DHIS2) |
 | `playbooks/preparar-control.yml` | Crea `~/.config/kitsalud/ssh-pass` desde el vault, para el salto por kit01 |
 | `roles/comun/` | Base común de kit01 y las VMs |
+| `inventarios/kit/group_vars/all/dns.yml` | Nombres y PTR de las zonas DNS del kit |
+| `playbooks/dns.yml` | BIND9 en kit01 (rol `bind9`) |
+| `roles/bind9/` | BIND9 autoritativo y recursivo (ver `kit01/bind9/README.md`) |
 | `roles/kit01_vms/` | LV `vms`, imagen base y VMs con cloud-init (ver `kit01/libvirt/README.md`) |
 
 Los roles de cada componente viven en su repositorio (`<repo>/ansible/roles/`) y se encuentran por `roles_path`, así que los repositorios tienen que estar clonados uno al lado del otro, como en el espacio de trabajo.
@@ -32,7 +35,7 @@ Los roles de cada componente viven en su repositorio (`<repo>/ansible/roles/`) y
 | ufw | Solo el grupo `vms` (`comun_ufw`) | Entrada denegada y SSH solo desde kit01 (`comun_ufw_ssh_origenes`). En kit01 filtra nftables y ufw no se toca |
 | Cliente Chrony | Apagado (`comun_chrony_cliente`) | Fuente `ntp.salud.movil`; se enciende en platform#6 |
 | Reenvío de rsyslog | Apagado (`comun_rsyslog_reenvio`) | TCP 514 hacia `10.20.20.10` con cola; se enciende en observability#3 |
-| DNS temporal | Grupo `vms` (`comun_dns_temporal`) | Drop-in de `systemd-resolved` con los DNS del sitio mientras no exista BIND9. Con la lista vacía (platform#5) se borra |
+| DNS temporal | Vacío (`comun_dns_temporal`) | Si tiene valores, escribe un drop-in de `systemd-resolved` con esos DNS; vacío, lo borra. Se usó en las VMs hasta que existió BIND9 |
 
 ## Secretos
 

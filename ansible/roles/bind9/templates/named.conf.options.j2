@@ -1,0 +1,39 @@
+// {{ ansible_managed }} (rol bind9, sección 9)
+acl kit { {% for r in dns_recursion %}{{ r }}; {% endfor %}};
+
+options {
+	directory "/var/cache/bind";
+
+	// Solo en la IP de servicios; el 53 de NetBird (wt0) y de systemd-resolved no se tocan
+	listen-on port 53 { {% for ip in bind9_escucha4 %}{{ ip }}; {% endfor %}};
+	listen-on-v6 port 53 { {% for ip in bind9_escucha6 %}{{ ip }}; {% endfor %}};
+
+	allow-query { kit; };
+	recursion yes;
+	allow-recursion { kit; };
+	allow-transfer { none; };
+
+	// Con Internet se usan los reenviadores; si no responden, resolución desde la raíz.
+	// Las zonas del kit son autoritativas y responden aunque no haya Internet.
+	forwarders { {% for f in dns_reenviadores %}{{ f }}; {% endfor %}};
+	forward first;
+	dnssec-validation auto;
+
+	version "no disponible";
+};
+
+logging {
+	channel consultas {
+		file "{{ bind9_log_dir }}/consultas.log" versions 5 size 20m;
+		print-time yes;
+		print-category yes;
+	};
+	channel general {
+		file "{{ bind9_log_dir }}/named.log" versions 3 size 10m;
+		print-time yes;
+		severity info;
+	};
+	category queries { consultas; };
+	category default { general; };
+	category lame-servers { null; };
+};

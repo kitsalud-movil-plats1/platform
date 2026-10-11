@@ -1,0 +1,15 @@
+{% set cuerpo %}
+@	IN	NS	ns1.{{ dns_zona }}.
+{% for p in dns_ptr %}
+{% for ip in p.ips if (ip | es_ipv6) == inversa_v6 %}
+{{ ip | nombre_ptr(zona_inversa) }}	IN	PTR	{{ p.nombre }}.{{ dns_zona }}.
+{% endfor %}
+{% endfor %}
+{% endset %}
+; {{ ansible_managed }} (rol bind9, sección 9)
+; El serial sale del contenido: cambia solo si cambian los registros.
+$TTL {{ bind9_ttl }}
+@	IN	SOA	ns1.{{ dns_zona }}. hostmaster.{{ dns_zona }}. (
+		{{ (cuerpo | hash('md5'))[:7] | int(base=16) }} ; serial
+		3600 600 604800 300 )
+{{ cuerpo }}

@@ -1,0 +1,12 @@
+---
+# Los dos escuchan "Recargar named" y corren en este orden
+- name: Validar la configuración y las zonas
+  ansible.builtin.command: named-checkconf -z
+  changed_when: false
+  listen: Recargar named
+
+- name: Recargar named
+  ansible.builtin.systemd_service:
+    name: named
+    state: reloaded
+  listen: Recargar named

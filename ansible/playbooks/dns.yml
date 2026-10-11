@@ -1,0 +1,7 @@
+---
+# DNS autoritativo y recursivo del kit en kit01 (platform#5)
+- name: BIND9 en kit01
+  hosts: kit
+  become: true
+  roles:
+    - bind9
