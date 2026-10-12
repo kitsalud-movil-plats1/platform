@@ -1,0 +1,7 @@
+---
+# DHCPv4 del kit en kit01 (network#5); el rol está en el repositorio network
+- name: Kea DHCPv4 en kit01
+  hosts: kit
+  become: true
+  roles:
+    - kea_dhcp4

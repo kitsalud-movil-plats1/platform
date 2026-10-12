@@ -1,0 +1,4 @@
+---
+# En el laboratorio virtual, el cliente hace de estación de administración
+dhcp_reservas:
+  - { nombre: kitlab-cliente, mac: "52:54:00:4b:02:01", ipv4: 10.20.10.10 }
