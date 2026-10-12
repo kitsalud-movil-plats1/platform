@@ -17,14 +17,14 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `playbooks/vms.yml` | Crea las VMs que falten en kit01 (rol `kit01_vms`) y les aplica el rol `comun` |
 | `playbooks/clinica01.yml` | Aplicaciones de clinica01 con los roles `docker` y `dhis2` del repositorio `apps` (`-e dhis2_estado=stopped` para detener DHIS2) |
 | `inventarios/kit/group_vars/all/dhcp.yml` | Reservas DHCPv4 de las estaciones de administración (`dhcp_reservas`) |
-| `playbooks/dhcp.yml` | Kea DHCPv4 en kit01 (rol `kea_dhcp4` del repositorio `network`) |
+| `playbooks/dhcp.yml` | Kea DHCPv4, Kea DHCPv6 sin estado y radvd en kit01 (roles `kea_dhcp4`, `kea_dhcp6` y `radvd` del repositorio `network`) |
 | `playbooks/prueba01.yml` | Enciende (`prueba01_estado=encendida`, por defecto) o apaga `prueba01` |
 | `playbooks/preparar-control.yml` | Crea `~/.config/kitsalud/ssh-pass` desde el vault, para el salto por kit01 |
 | `roles/comun/` | Base común de kit01 y las VMs |
 | `inventarios/kit/group_vars/all/dns.yml` | Nombres y PTR de las zonas DNS del kit |
 | `playbooks/dns.yml` | BIND9 en kit01 (rol `bind9`) |
 | `roles/bind9/` | BIND9 autoritativo y recursivo (ver `kit01/bind9/README.md`) |
-| `inventarios/kit/group_vars/all/paquetes.yml` | Versiones fijas que usan varios roles (`chrony`) |
+| `inventarios/kit/group_vars/all/paquetes.yml` | Versiones fijas que usan varios roles (`chrony`, Kea y `radvd`) |
 | `playbooks/ntp.yml` | Chrony en kit01 (rol `chrony`) |
 | `roles/chrony/` | Servidor NTP del kit (ver `kit01/chrony/README.md`) |
 | `roles/kit01_vms/` | LV `vms`, imagen base y VMs con cloud-init (ver `kit01/libvirt/README.md`) |
