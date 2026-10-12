@@ -6,7 +6,7 @@ VM de prueba conectada a `br-com`, que hace de celular de la Comunidad (VLAN 40)
 |---|---|
 | Recursos | 1 vCPU, 512 MB, disco de 10 GB, sin disco de datos |
 | Red | `br-com`, MAC fija `52:54:00:40:00:50`, link-local `fe80::5054:ff:fe40:50` |
-| Direcciones | DHCPv4 y SLAAC/DHCPv6 sin estado, como un cliente de la red. Por DHCPv4 recibe una dirección de `10.20.40.100-250`; hasta radvd (network#6) su IPv6 es solo la link-local |
+| Direcciones | DHCPv4 y SLAAC/DHCPv6 sin estado, como un cliente de la red: `10.20.40.100-250` por DHCPv4, `fd5a:fc7e:d716:40:5054:ff:fe40:50` por SLAAC y DNS, dominio y NTP por DHCPv4 y DHCPv6 |
 | Arranque | Sin `autostart`. Se enciende solo para las pruebas y no cuenta en los totales ni en los perfiles por misión |
 | Configuración | Solo cloud-init (usuario compartido con el hash del vault, SSH sin root, zona horaria); sin el rol `comun` ni `ufw` |
 | Herramientas | `dig`, `curl`, `ping` (vienen en la imagen cloud) |
