@@ -1,7 +1,10 @@
 ---
-# DHCPv4 del kit en kit01 (network#5); el rol está en el repositorio network
-- name: Kea DHCPv4 en kit01
+# Provisión de direcciones del kit en kit01 (network#5 y network#6):
+# DHCPv4, DHCPv6 sin estado y RA. Los roles están en el repositorio network.
+- name: Kea DHCPv4, Kea DHCPv6 y radvd en kit01
   hosts: kit
   become: true
   roles:
     - kea_dhcp4
+    - kea_dhcp6
+    - radvd
