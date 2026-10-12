@@ -1,0 +1,5 @@
+---
+# Reservas por MAC para las estaciones de administración (10.20.10.10-29, D-18).
+# Se agregan cuando se conocen las MAC de las laptops del grupo.
+dhcp_reservas: []
+#  - { nombre: admin-ejemplo, mac: "aa:bb:cc:dd:ee:ff", ipv4: 10.20.10.10 }

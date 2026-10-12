@@ -15,6 +15,8 @@ redes:
     gw4: 10.20.10.1
     ipv6: fd5a:fc7e:d716:10::/64
     gw6: fd5a:fc7e:d716:10::1
+    pool4: 10.20.10.100 - 10.20.10.199
+    prestamo4: 28800   # 8 h
   servidores:
     interfaz: br-srv
     ipv4: 10.20.20.0/24
@@ -28,6 +30,8 @@ redes:
     gw4: 10.20.40.1
     ipv6: fd5a:fc7e:d716:40::/64
     gw6: fd5a:fc7e:d716:40::1
+    pool4: 10.20.40.100 - 10.20.40.250
+    prestamo4: 3600    # 1 h
 
 # Servicios de kit01 para los clientes (DNS, NTP, monitoreo, syslog)
 servicios_kit01:
