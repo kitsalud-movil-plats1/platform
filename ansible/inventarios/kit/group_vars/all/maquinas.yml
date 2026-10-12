@@ -20,3 +20,16 @@ maquinas_virtuales:
     ipv4: "{{ equipos.comunidad01.ipv4 }}"
     ipv6: "{{ equipos.comunidad01.ipv6 }}"
     autostart: true
+  # VM de prueba en la Comunidad (D-24): hace de celular de la VLAN 40.
+  # Solo se enciende durante las pruebas (playbooks/prueba01.yml).
+  - nombre: prueba01
+    vcpu: 1
+    ram_mb: 512
+    disco_sistema: 10G
+    mac: "52:54:00:40:00:50"
+    red: comunidad
+    direccion: dhcp
+    autostart: false
+    # Hasta tener DHCP solo tiene link-local; se llega desde kit01 por br-com
+    ssh_espera: "fe80::5054:ff:fe40:50%br-com"
+    ssh_claves: [prueba01]

@@ -6,6 +6,7 @@ kit01 es el hipervisor de `clinica01` y `comunidad01` (D-04, D-19, sección 10.1
 |---|---|---|---|---|---|
 | `clinica01` | 4 | 7 GB | 40 GB sistema + 120 GB datos (`/srv`) | `52:54:00:20:00:11` | `10.20.20.11/24`, `fd5a:fc7e:d716:20::11/64` |
 | `comunidad01` | 2 | 2,5 GB | 20 GB sistema + 120 GB datos (`/srv`) | `52:54:00:20:00:12` | `10.20.20.12/24`, `fd5a:fc7e:d716:20::12/64` |
+| `prueba01` (en `br-com`, solo para pruebas) | 1 | 512 MB | 10 GB | `52:54:00:40:00:50` | DHCPv4 y SLAAC en la Comunidad; ver [`prueba01/`](prueba01/) |
 
 Las definiciones están en `ansible/inventarios/kit/group_vars/all/maquinas.yml`.
 
