@@ -5,6 +5,12 @@ ethernets:
     match:
       macaddress: "{{ vm.mac }}"
     set-name: eth0
+{% if vm.direccion | default('fija') == 'dhcp' %}
+    # Como un cliente de la red: DHCPv4, SLAAC y DHCPv6 sin estado según los RA de kit01
+    dhcp4: true
+    dhcp6: false
+    accept-ra: true
+{% else %}
     dhcp4: false
     dhcp6: false
     accept-ra: false
@@ -20,3 +26,4 @@ ethernets:
     nameservers:
       addresses: [{{ servicios_kit01.ipv4 }}, "{{ servicios_kit01.ipv6 }}"]
       search: [{{ dominio }}]
+{% endif %}

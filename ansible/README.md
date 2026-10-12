@@ -7,15 +7,16 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | Ruta | Contenido |
 |---|---|
 | `ansible.cfg` | Inventario por defecto (`inventarios/kit`), `roles_path` hacia `roles/` y hacia `../../{network,apps,observability}/ansible/roles`, y la contraseña del vault en `~/.config/kitsalud/vault-pass` |
-| `inventarios/kit/` | kit01 por NetBird, y clinica01 y comunidad01 a través de kit01 |
+| `inventarios/kit/` | kit01 por NetBird; clinica01 y comunidad01 a través de kit01 (grupo `vms`); prueba01 por su link-local desde kit01 (grupo `pruebas`) |
 | `inventarios/lab/` | El laboratorio virtual (`workspace/lab-virtual`), con `kitlab-kit01` como `kit01` y `kitlab-cliente` como VM de prueba |
 | `inventarios/kit/group_vars/all/red.yml` | Plan de direcciones (secciones 7 y 8). Se define solo aquí; el inventario del laboratorio lo enlaza |
-| `inventarios/kit/group_vars/all/maquinas.yml` | Definición de las VMs (vCPU, RAM, discos, MAC, IP, autostart) |
+| `inventarios/kit/group_vars/all/maquinas.yml` | Definición de las VMs (vCPU, RAM, discos, MAC, IP, autostart). Campos opcionales: `red`, `direccion` (`fija` o `dhcp`), `disco_datos`, `ssh_espera` y `ssh_claves` |
 | `inventarios/kit/group_vars/all/vault.yml` | Secretos cifrados con `ansible-vault`. Sus claves están en [`vault.example.yml`](vault.example.yml) |
 | `inventarios/*/host_vars/kit01.yml` | Nombres de interfaz de cada rol (`iface_wan`, `iface_lan`, D-14, R-08) y ajustes propios de kit01 |
 | `playbooks/comun.yml` | Aplica el rol `comun` a todos los hosts |
 | `playbooks/vms.yml` | Crea las VMs que falten en kit01 (rol `kit01_vms`) y les aplica el rol `comun` |
 | `playbooks/clinica01.yml` | Aplicaciones de clinica01 con los roles `docker` y `dhis2` del repositorio `apps` (`-e dhis2_estado=stopped` para detener DHIS2) |
+| `playbooks/prueba01.yml` | Enciende (`prueba01_estado=encendida`, por defecto) o apaga `prueba01` |
 | `playbooks/preparar-control.yml` | Crea `~/.config/kitsalud/ssh-pass` desde el vault, para el salto por kit01 |
 | `roles/comun/` | Base común de kit01 y las VMs |
 | `inventarios/kit/group_vars/all/dns.yml` | Nombres y PTR de las zonas DNS del kit |

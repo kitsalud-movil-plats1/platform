@@ -10,4 +10,3 @@ kit01_vms_imagen_serie: release-20260926
 kit01_vms_imagen_url: "https://cloud-images.ubuntu.com/releases/noble/{{ kit01_vms_imagen_serie }}"
 kit01_vms_imagen_archivo: ubuntu-24.04-server-cloudimg-amd64.img
 
-kit01_vms_bridge: "{{ redes.servidores.interfaz }}"

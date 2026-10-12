@@ -1,0 +1,8 @@
+---
+# prueba01 hace de cliente de la Comunidad: no lleva el rol comun ni ufw.
+# El SSH nace en kit01 (su salida no se filtra) hacia la link-local de la VM.
+ansible_ssh_common_args: >-
+  -o HostKeyAlias=prueba01
+  -o StrictHostKeyChecking=accept-new
+  -o ProxyCommand="sshpass -f {{ lookup('env', 'HOME') }}/.config/kitsalud/ssh-pass
+  ssh -o StrictHostKeyChecking=accept-new -W [fe80::5054:ff:fe40:50%%br-com]:22 {{ admin_usuario }}@{{ hostvars['kit01'].ansible_host }}"

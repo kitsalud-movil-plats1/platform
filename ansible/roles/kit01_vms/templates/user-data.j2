@@ -14,6 +14,7 @@ ssh_pwauth: true
 disable_root: true
 package_update: false
 package_upgrade: false
+{% if vm.disco_datos is defined %}
 fs_setup:
   - label: datos
     filesystem: ext4
@@ -22,6 +23,7 @@ fs_setup:
     overwrite: false
 mounts:
   - [LABEL=datos, /srv, ext4, "defaults,nofail", "0", "2"]
+{% endif %}
 runcmd:
   # Después del primer arranque la configuración la maneja Ansible
   - [touch, /etc/cloud/cloud-init.disabled]

@@ -1,0 +1,36 @@
+---
+# Enciende o apaga prueba01 (D-24). Uso:
+#   ansible-playbook playbooks/prueba01.yml                          # encender y esperar el SSH
+#   ansible-playbook playbooks/prueba01.yml -e prueba01_estado=apagada
+- name: Estado de prueba01
+  hosts: kit
+  become: true
+  vars:
+    prueba01_estado: encendida
+  tasks:
+    - name: Estado actual
+      ansible.builtin.command: virsh -c qemu:///system domstate prueba01
+      register: prueba01_actual
+      changed_when: false
+
+    - name: Encender
+      ansible.builtin.command: virsh -c qemu:///system start prueba01
+      when: prueba01_estado == 'encendida' and prueba01_actual.stdout != 'running'
+      changed_when: true
+
+    - name: Esperar el SSH por la link-local
+      ansible.builtin.wait_for:
+        host: "fe80::5054:ff:fe40:50%br-com"
+        port: 22
+        search_regex: OpenSSH
+        timeout: 300
+      when: prueba01_estado == 'encendida'
+
+    - name: Apagar (ACPI) y esperar a que se detenga
+      ansible.builtin.shell: >
+        virsh -c qemu:///system shutdown prueba01 &&
+        for i in $(seq 1 60); do
+          [ "$(virsh -c qemu:///system domstate prueba01)" = "shut off" ] && exit 0; sleep 2;
+        done; exit 1
+      when: prueba01_estado == 'apagada' and prueba01_actual.stdout == 'running'
+      changed_when: true
