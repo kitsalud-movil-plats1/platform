@@ -16,6 +16,8 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `playbooks/comun.yml` | Aplica el rol `comun` a todos los hosts |
 | `playbooks/vms.yml` | Crea las VMs que falten en kit01 (rol `kit01_vms`) y les aplica el rol `comun` |
 | `playbooks/clinica01.yml` | Aplicaciones de clinica01 con los roles `docker` y `dhis2` del repositorio `apps` (`-e dhis2_estado=stopped` para detener DHIS2) |
+| `inventarios/kit/group_vars/all/dhcp.yml` | Reservas DHCPv4 de las estaciones de administración (`dhcp_reservas`) |
+| `playbooks/dhcp.yml` | Kea DHCPv4 en kit01 (rol `kea_dhcp4` del repositorio `network`) |
 | `playbooks/prueba01.yml` | Enciende (`prueba01_estado=encendida`, por defecto) o apaga `prueba01` |
 | `playbooks/preparar-control.yml` | Crea `~/.config/kitsalud/ssh-pass` desde el vault, para el salto por kit01 |
 | `roles/comun/` | Base común de kit01 y las VMs |
