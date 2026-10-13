@@ -1,3 +1,6 @@
 ---
 - name: Paquetes y servicios
   ansible.builtin.import_tasks: paquetes.yml
+
+- name: Dominio y servicio samba-ad-dc
+  ansible.builtin.import_tasks: aprovisionamiento.yml
