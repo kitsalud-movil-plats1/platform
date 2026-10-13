@@ -6,3 +6,5 @@ vault_admin_password_hash: ""   # hash SHA-512 de la misma contraseña (openssl 
 vault_sw01_password: ""         # usuario admin de sw01
 vault_ap01_password: ""         # usuario admin de ap01 (R-12)
 vault_dhis2_db_password: ""     # usuario dhis de PostgreSQL de DHIS2 en clinica01 (apps#1)
+vault_samba_admin_password: ""  # Administrator del dominio ad.salud.movil (platform#8)
+vault_samba_usuarios_password: ""  # usuarios de prueba del dominio (platform#8)

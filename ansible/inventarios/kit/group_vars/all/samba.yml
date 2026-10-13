@@ -1,0 +1,28 @@
+---
+# Dominio de Samba AD en clinica01 (R10, D-05, sección 9). Las contraseñas
+# están en el vault; aquí solo los nombres.
+samba_realm: AD.SALUD.MOVIL
+samba_dominio: SALUD
+samba_netbios: DC01
+samba_dc_fqdn: "dc01.{{ samba_realm | lower }}"
+samba_admin_password: "{{ vault_samba_admin_password }}"
+samba_usuarios_password: "{{ vault_samba_usuarios_password }}"
+
+# Grupos y usuarios individuales de prueba (D-18)
+samba_grupos: [clinicos, admins]
+samba_usuarios:
+  - { nombre: ana.rojas, nombres: Ana, apellidos: Rojas, grupos: [clinicos] }
+  - { nombre: carlos.perez, nombres: Carlos, apellidos: Perez, grupos: [clinicos] }
+  - { nombre: laura.gomez, nombres: Laura, apellidos: Gomez, grupos: [admins] }
+
+# Política de contraseñas. Sin complejidad ni vencimiento por las credenciales
+# académicas (R-14); bloqueo de 15 minutos después de 5 intentos fallidos.
+samba_politica:
+  complexity: "off"
+  min-pwd-length: 8
+  history-length: 5
+  min-pwd-age: 0
+  max-pwd-age: 0
+  account-lockout-threshold: 5
+  account-lockout-duration: 15
+  reset-account-lockout-after: 15
