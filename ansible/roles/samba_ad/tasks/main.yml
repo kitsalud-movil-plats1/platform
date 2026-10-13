@@ -7,3 +7,6 @@
 
 - name: ufw para la delegación DNS
   ansible.builtin.import_tasks: firewall.yml
+
+- name: Grupos y usuarios
+  ansible.builtin.import_tasks: dominio.yml
