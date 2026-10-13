@@ -24,9 +24,12 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `inventarios/kit/group_vars/all/dns.yml` | Nombres y PTR de las zonas DNS del kit |
 | `playbooks/dns.yml` | BIND9 en kit01 (rol `bind9`) |
 | `roles/bind9/` | BIND9 autoritativo y recursivo (ver `kit01/bind9/README.md`) |
-| `inventarios/kit/group_vars/all/paquetes.yml` | Versiones fijas que usan varios roles (`chrony`, Kea y `radvd`) |
+| `inventarios/kit/group_vars/all/paquetes.yml` | Versiones fijas que usan varios roles (`chrony`, Kea, `radvd`, Samba y Kerberos) |
 | `playbooks/ntp.yml` | Chrony en kit01 (rol `chrony`) |
 | `roles/chrony/` | Servidor NTP del kit (ver `kit01/chrony/README.md`) |
+| `inventarios/kit/group_vars/all/samba.yml` | Dominio de Samba AD (realm, grupos, usuarios de prueba y política de contraseñas) |
+| `playbooks/samba.yml` | Samba AD DC en clinica01 (rol `samba_ad`) |
+| `roles/samba_ad/` | Controlador de dominio `ad.salud.movil` (ver `clinica01/samba/README.md`) |
 | `roles/kit01_vms/` | LV `vms`, imagen base y VMs con cloud-init (ver `kit01/libvirt/README.md`) |
 
 Los roles de cada componente viven en su repositorio (`<repo>/ansible/roles/`) y se encuentran por `roles_path`, así que los repositorios tienen que estar clonados uno al lado del otro, como en el espacio de trabajo.

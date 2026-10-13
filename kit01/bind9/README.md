@@ -8,7 +8,8 @@ DNS autoritativo y recursivo del kit (R2, sección 9 del documento). Lo instala 
 | Escucha | Solo `10.20.20.10` y `fd5a:fc7e:d716:20::10`, puerto 53. El 53 de NetBird (`100.90.225.113`) y el de systemd-resolved (`127.0.0.53` y `127.0.0.54`) no se tocan |
 | Zonas | `salud.movil`, `20.10.in-addr.arpa` (la de `10.20.0.0/16`) y `6.1.7.d.e.7.c.f.a.5.d.f.ip6.arpa` (la de `fd5a:fc7e:d716::/48`), en `/etc/bind/zonas/` |
 | Consultas y recursión | Solo desde `10.20.0.0/16`, `fd5a:fc7e:d716::/48` y localhost. Sin transferencias de zona |
-| Reenviadores | `1.1.1.1` y `9.9.9.9` con `forward first`; si no responden, resuelve desde la raíz. `dnssec-validation auto` |
+| Reenviadores | `1.1.1.1` y `9.9.9.9` con `forward first`; si no responden, resuelve desde la raíz. `dnssec-validation auto`, salvo `salud.movil` (`validate-except`), que no cuelga de un TLD real |
+| Delegación | `ad.salud.movil` se delega al DNS interno de Samba AD en clinica01 (`dc01.ad`, platform#8). La zona `salud.movil` tiene `forwarders { };`, así que las consultas de la subzona van a clinica01 y nunca a los reenviadores |
 | Sin Internet | Las tres zonas son autoritativas y responden igual; lo externo devuelve `SERVFAIL` |
 | Logs | Consultas en `/var/log/named/consultas.log` y el resto en `/var/log/named/named.log`, con rotación por tamaño |
 
@@ -17,14 +18,14 @@ DNS autoritativo y recursivo del kit (R2, sección 9 del documento). Lo instala 
 | Nombre (`.salud.movil`) | A | AAAA |
 |---|---|---|
 | `pacientes`, `archivos`, `consultas`, `clinica01` | `10.20.20.11` | `fd5a:fc7e:d716:20::11` |
-| `dc01.ad` | `10.20.20.11` | `fd5a:fc7e:d716:20::11` |
+| `dc01.ad` (glue) | `10.20.20.11` | `fd5a:fc7e:d716:20::11` |
 | `biblioteca`, `videos`, `registro`, `comunidad01` | `10.20.20.12` | `fd5a:fc7e:d716:20::12` |
 | `ns1`, `ntp`, `monitoreo` | `10.20.20.10` | `fd5a:fc7e:d716:20::10` |
 | `portal` | `10.20.40.1` | `fd5a:fc7e:d716:40::1` |
 | `kit01`, `sw01` | `10.20.10.1`, `10.20.10.2` | `fd5a:fc7e:d716:10::1`, `::2` |
 | `ap01` | `10.20.10.3` | - (el AP solo se gestiona por IPv4) |
 
-`dc01.ad` es por ahora un registro normal de la zona. Cuando exista Samba AD (platform#8), `ad.salud.movil` se delega a clinica01 y ese registro pasa a ser el glue de la delegación.
+`ad.salud.movil` está delegada a Samba AD en clinica01 (`ad NS dc01.ad.salud.movil.`, en `dns_delegaciones`) y `dc01.ad` es el glue de la delegación. Los demás nombres del dominio (`_ldap._tcp`, `_kerberos._udp` y los que registre Samba) los responde el DC. BIND9 consulta a clinica01 desde `10.20.20.1` o `.10`, que son los únicos orígenes que acepta su ufw (F-25).
 
 Las inversas tienen un PTR por dirección: `kit01` (`10.20.10.1`, `10.20.20.1` y sus IPv6), `ns1` (`.10`), `portal`, `sw01`, `ap01`, `clinica01` y `comunidad01`.
 
@@ -53,6 +54,7 @@ Para agregar un nombre se edita `dns.yml` y se vuelve a ejecutar el playbook.
 | `dig @10.20.20.10 pacientes.salud.movil A` y `AAAA` | `10.20.20.11` y `fd5a:fc7e:d716:20::11`, con el flag `aa` |
 | `dig @fd5a:fc7e:d716:20::10 -x 10.20.20.11` y `-x fd5a:fc7e:d716:20::11` | `clinica01.salud.movil.` |
 | `dig @10.20.20.10 isc.org A +dnssec` | Respuesta con el flag `ad` (DNSSEC validado) |
+| `dig -b 10.20.10.1 @10.20.20.10 SRV _ldap._tcp.ad.salud.movil` y `dig -b fd5a:fc7e:d716:10::1 @fd5a:fc7e:d716:20::10 SRV _ldap._tcp.ad.salud.movil` | `0 100 389 dc01.ad.salud.movil.` (delegación a Samba AD) |
 | En sw01, `:put [:resolve domain-name=pacientes.salud.movil server=10.20.20.10]` | `10.20.20.11` |
 | `sudo tail /var/log/named/consultas.log` | Las consultas con el cliente y la dirección por la que llegaron |
 
@@ -76,4 +78,5 @@ dig @10.20.20.10 wikipedia.org A            # SERVFAIL
 - **No responde.** `systemctl status named` y `sudo tail /var/log/named/named.log`. Si cambió la configuración, `sudo named-checkconf -z`.
 - **Responde `REFUSED`.** El cliente no está en `10.20.0.0/16` ni en la ULA.
 - **Lo externo da `SERVFAIL` con Internet.** `dig @1.1.1.1 ubuntu.com` desde kit01; si tampoco responde, el sitio bloquea el DNS hacia afuera y hay que revisar el reenvío o usar los DNS del sitio como reenviadores.
+- **`ad.salud.movil` da `SERVFAIL`.** `dig @10.20.20.11 SOA ad.salud.movil` desde kit01. Si no responde, el problema está en Samba AD o en el ufw de clinica01 (`clinica01/samba/README.md`). Si responde, `sudo rndc flush` y revisar `/var/log/named/named.log`.
 - **`named` no arranca después de un cambio de nombres.** Una zona inválida no se escribe, porque la valida `named-checkzone`. Revisar la salida del playbook.
