@@ -1,0 +1,8 @@
+---
+# Samba AD DC en clinica01 (platform#8). La delegación de ad.salud.movil
+# está en el rol bind9 (playbooks/dns.yml).
+- name: Samba AD DC en clinica01
+  hosts: clinica01
+  become: true
+  roles:
+    - samba_ad

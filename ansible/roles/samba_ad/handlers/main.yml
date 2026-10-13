@@ -1,0 +1,5 @@
+---
+- name: Reiniciar samba-ad-dc
+  ansible.builtin.systemd_service:
+    name: samba-ad-dc
+    state: restarted

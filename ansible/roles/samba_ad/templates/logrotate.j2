@@ -1,0 +1,10 @@
+# {{ ansible_managed }} (rol samba_ad, platform#8)
+{{ samba_log_auth }} {
+	weekly
+	rotate 8
+	compress
+	delaycompress
+	missingok
+	notifempty
+	copytruncate
+}

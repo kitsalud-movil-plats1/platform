@@ -1,0 +1,16 @@
+# {{ ansible_managed }} (rol samba_ad, platform#8)
+[libdefaults]
+	default_realm = {{ samba_realm }}
+	dns_lookup_realm = false
+	dns_lookup_kdc = true
+
+[realms]
+	{{ samba_realm }} = {
+		kdc = {{ samba_dc_fqdn }}
+		admin_server = {{ samba_dc_fqdn }}
+		default_domain = {{ samba_realm | lower }}
+	}
+
+[domain_realm]
+	.{{ samba_realm | lower }} = {{ samba_realm }}
+	{{ samba_realm | lower }} = {{ samba_realm }}
