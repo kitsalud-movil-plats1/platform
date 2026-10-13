@@ -1,0 +1,112 @@
+---
+- name: Dominio aprovisionado
+  ansible.builtin.stat:
+    path: /var/lib/samba/private/sam.ldb
+  register: samba_sam
+
+# provision no arranca si existe el smb.conf de fábrica (servidor de archivos)
+- name: Guardar el smb.conf de fábrica
+  ansible.builtin.command: mv /etc/samba/smb.conf /etc/samba/smb.conf.ubuntu
+  args:
+    removes: /etc/samba/smb.conf
+    creates: /etc/samba/smb.conf.ubuntu
+  when: not samba_sam.stat.exists
+
+# Sin --adminpass: la política de fábrica rechaza la clave del vault, así que
+# Samba genera una temporal que no se guarda y abajo se fija la del vault.
+- name: Aprovisionar el dominio
+  ansible.builtin.command:
+    argv:
+      - samba-tool
+      - domain
+      - provision
+      - --server-role=dc
+      - --use-rfc2307
+      - --dns-backend=SAMBA_INTERNAL
+      - "--realm={{ samba_realm }}"
+      - "--domain={{ samba_dominio }}"
+      - "--host-name={{ samba_netbios | lower }}"
+      - "--host-ip={{ samba_ipv4 }}"
+      - "--host-ip6={{ samba_ipv6 }}"
+      - "--option=netbios name = {{ samba_netbios }}"
+      - "--option=interfaces = lo {{ samba_ipv4 }} {{ samba_ipv6 }}"
+      - --option=bind interfaces only = yes
+      - "--option=dns forwarder = {{ samba_dns_reenviadores | join(' ') }}"
+    creates: /var/lib/samba/private/sam.ldb
+  no_log: true
+
+- name: smb.conf del DC
+  ansible.builtin.template:
+    src: smb.conf.j2
+    dest: /etc/samba/smb.conf
+    mode: "0644"
+    validate: testparm -s %s
+  notify: Reiniciar samba-ad-dc
+
+- name: krb5.conf del dominio
+  ansible.builtin.template:
+    src: krb5.conf.j2
+    dest: /etc/krb5.conf
+    mode: "0644"
+
+- name: Rotación del log de autenticación
+  ansible.builtin.template:
+    src: logrotate.j2
+    dest: /etc/logrotate.d/samba-auth
+    mode: "0644"
+
+- name: samba-ad-dc activo al arrancar
+  ansible.builtin.systemd_service:
+    name: samba-ad-dc
+    masked: false
+    enabled: true
+    state: started
+
+- name: Aplicar ya los cambios de smb.conf
+  ansible.builtin.meta: flush_handlers
+
+- name: KDC escuchando
+  ansible.builtin.wait_for:
+    host: "{{ samba_ipv4 }}"
+    port: 88
+    timeout: 60
+
+- name: Política de contraseñas actual
+  ansible.builtin.command: samba-tool domain passwordsettings show
+  register: samba_politica_actual
+  changed_when: false
+
+- name: Política de contraseñas
+  ansible.builtin.command:
+    argv: "{{ ['samba-tool', 'domain', 'passwordsettings', 'set'] + samba_politica_args }}"
+  vars:
+    # "Etiqueta: valor" de passwordsettings show, como diccionario
+    samba_politica_hoy: "{{ dict(samba_politica_actual.stdout_lines | map('regex_findall', '^(.+?): (.*)$') | select | map('first')) }}"
+    samba_politica_dif: >-
+      {%- set d = [] -%}
+      {%- for k, v in samba_politica.items() -%}
+      {%- if samba_politica_hoy.get(samba_politica_etiquetas[k]) != (v | string) -%}{%- set _ = d.append(k) -%}{%- endif -%}
+      {%- endfor -%}{{ d }}
+    samba_politica_args: >-
+      {%- set a = [] -%}
+      {%- for k, v in samba_politica.items() -%}{%- set _ = a.append('--' ~ k ~ '=' ~ v) -%}{%- endfor -%}{{ a }}
+  when: samba_politica_dif | length > 0
+
+# La clave queda como la del vault; si ya lo es, no se toca
+- name: Clave de Administrator vigente
+  ansible.builtin.shell: kinit Administrator@{{ samba_realm }} <<< "$CLAVE"
+  args:
+    executable: /bin/bash
+  environment:
+    CLAVE: "{{ samba_admin_password }}"
+    KRB5CCNAME: "MEMORY:"
+  register: samba_admin_kinit
+  changed_when: false
+  failed_when: false
+  no_log: true
+
+- name: Clave de Administrator desde el vault
+  ansible.builtin.command:
+    argv: [samba-tool, user, setpassword, Administrator, "--newpassword={{ samba_admin_password }}"]
+  when: samba_admin_kinit.rc != 0
+  no_log: true

@@ -1,0 +1,25 @@
+# {{ ansible_managed }} (rol samba_ad, platform#8)
+[global]
+	netbios name = {{ samba_netbios }}
+	realm = {{ samba_realm }}
+	workgroup = {{ samba_dominio }}
+	server role = active directory domain controller
+	idmap_ldb:use rfc2307 = yes
+
+	# Solo en la IP de clinica01 y en lo (sección 10.1)
+	interfaces = lo {{ samba_ipv4 }} {{ samba_ipv6 }}
+	bind interfaces only = yes
+
+	# DNS interno para ad.salud.movil; lo demás va a BIND9 en kit01
+	dns forwarder = {{ samba_dns_reenviadores | join(' ') }}
+
+	# Intentos de autenticación (fallidos y exitosos) en un archivo propio
+	log level = 1 auth_audit:3@{{ samba_log_auth }}
+
+[sysvol]
+	path = /var/lib/samba/sysvol
+	read only = No
+
+[netlogon]
+	path = /var/lib/samba/sysvol/{{ samba_realm | lower }}/scripts
+	read only = No

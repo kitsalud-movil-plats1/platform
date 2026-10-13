@@ -1,0 +1,49 @@
+---
+# Grupos y usuarios individuales de prueba (samba.yml). La clave solo se pone
+# al crear el usuario; después cada persona la cambia si quiere.
+- name: Grupos existentes
+  ansible.builtin.command: samba-tool group list
+  register: samba_grupos_hoy
+  changed_when: false
+
+- name: Grupos del kit
+  ansible.builtin.command:
+    argv: [samba-tool, group, add, "{{ item }}"]
+  loop: "{{ samba_grupos | difference(samba_grupos_hoy.stdout_lines) }}"
+
+- name: Usuarios existentes
+  ansible.builtin.command: samba-tool user list
+  register: samba_usuarios_hoy
+  changed_when: false
+
+- name: Usuarios de prueba
+  ansible.builtin.command:
+    argv:
+      - samba-tool
+      - user
+      - create
+      - "{{ item.nombre }}"
+      - "{{ samba_usuarios_password }}"
+      - "--given-name={{ item.nombres }}"
+      - "--surname={{ item.apellidos }}"
+  loop: "{{ samba_usuarios | rejectattr('nombre', 'in', samba_usuarios_hoy.stdout_lines) }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+  no_log: true
+
+- name: Miembros actuales de cada grupo
+  ansible.builtin.command:
+    argv: [samba-tool, group, listmembers, "{{ item }}"]
+  loop: "{{ samba_grupos }}"
+  register: samba_miembros_hoy
+  changed_when: false
+
+- name: Miembros de cada grupo
+  ansible.builtin.command:
+    argv: [samba-tool, group, addmembers, "{{ item.item }}", "{{ faltan | join(',') }}"]
+  vars:
+    faltan: "{{ samba_usuarios | selectattr('grupos', 'contains', item.item) | map(attribute='nombre') | difference(item.stdout_lines) }}"
+  loop: "{{ samba_miembros_hoy.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: faltan | length > 0

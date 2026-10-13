@@ -2,6 +2,8 @@
 zone "{{ dns_zona }}" {
 	type primary;
 	file "/etc/bind/zonas/db.{{ dns_zona }}";
+	// Las subzonas delegadas (ad) se consultan a su servidor, nunca a los reenviadores
+	forwarders { };
 };
 
 zone "{{ dns_zona_inversa4 }}" {

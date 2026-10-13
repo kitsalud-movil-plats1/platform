@@ -1,0 +1,53 @@
+---
+# Los paquetes se instalan sin arrancar smbd, nmbd ni winbind: en un DC los
+# reemplaza samba-ad-dc, que arranca solo después de aprovisionar.
+- name: Paquetes instalados
+  ansible.builtin.package_facts:
+
+- name: Impedir que los paquetes arranquen servicios al instalarse
+  ansible.builtin.copy:
+    dest: /usr/sbin/policy-rc.d
+    content: "#!/bin/sh\nexit 101\n"
+    mode: "0755"
+    force: false
+  register: samba_policy
+  when: "'samba-ad-dc' not in ansible_facts.packages"
+
+- name: Samba y Kerberos con versión fija
+  block:
+    - name: Paquetes de Samba AD DC
+      ansible.builtin.apt:
+        name: "{{ samba_paquetes }}"
+        state: present
+        install_recommends: false
+        update_cache: true
+        cache_valid_time: 3600
+  always:
+    - name: Quitar el bloqueo de arranque
+      ansible.builtin.file:
+        path: /usr/sbin/policy-rc.d
+        state: absent
+      when: samba_policy is changed
+
+- name: Retener Samba y Kerberos
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop: "{{ samba_retenidos }}"
+
+- name: smbd, nmbd y winbind apagados (el DC los reemplaza)
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+    masked: true
+  loop: [smbd, nmbd, winbind]
+
+# El nombre del DC tiene que resolver a su IP real (no a 127.0.1.1)
+- name: dc01 en /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: "^{{ item | regex_escape }}\\s"
+    line: "{{ item }} {{ samba_dc_fqdn }} {{ samba_netbios | lower }}"
+    insertafter: "^127\\.0\\.1\\.1"
+  loop: ["{{ samba_ipv4 }}", "{{ samba_ipv6 }}"]

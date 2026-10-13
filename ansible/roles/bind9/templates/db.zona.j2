@@ -1,5 +1,10 @@
 {% set cuerpo %}
 @	IN	NS	ns1.{{ dns_zona }}.
+{% for d in dns_delegaciones %}
+{% for ns in d.ns %}
+{{ d.nombre }}	IN	NS	{{ ns }}.{{ dns_zona }}.
+{% endfor %}
+{% endfor %}
 {% for r in dns_registros %}
 {{ r.nombre }}	IN	A	{{ r.ipv4 }}
 {% if r.ipv6 is defined %}

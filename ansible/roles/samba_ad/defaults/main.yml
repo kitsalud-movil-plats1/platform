@@ -1,0 +1,51 @@
+---
+# Samba AD DC de Ubuntu 24.04 con versión fija (AGENTS.md, sección 5)
+samba_version: "{{ version_samba }}"
+samba_krb5_version: "{{ version_krb5 }}"
+samba_paquetes:
+  - "samba={{ samba_version }}"
+  - "samba-ad-dc={{ samba_version }}"
+  - "samba-ad-provision={{ samba_version }}"
+  - "winbind={{ samba_version }}"
+  - "smbclient={{ samba_version }}"
+  - "krb5-user={{ samba_krb5_version }}"
+samba_retenidos:
+  - samba
+  - samba-ad-dc
+  - samba-ad-provision
+  - samba-common-bin
+  - samba-libs
+  - samba-dsdb-modules
+  - samba-vfs-modules
+  - python3-samba
+  - winbind
+  - smbclient
+  - krb5-user
+
+# Solo en la IP de clinica01 y en lo; el 53 de systemd-resolved (127.0.0.53/54) no se toca
+samba_ipv4: "{{ equipos.clinica01.ipv4 }}"
+samba_ipv6: "{{ equipos.clinica01.ipv6 }}"
+
+# Lo que no es de ad.salud.movil lo resuelve BIND9 en kit01
+samba_dns_reenviadores: ["{{ servicios_kit01.ipv4 }}", "{{ servicios_kit01.ipv6 }}"]
+
+# BIND9 consulta la subzona delegada desde kit01 (F-25)
+samba_dns_origenes:
+  - "{{ redes.servidores.gw4 }}"
+  - "{{ servicios_kit01.ipv4 }}"
+  - "{{ redes.servidores.gw6 }}"
+  - "{{ servicios_kit01.ipv6 }}"
+
+# auth_audit nivel 3 registra los intentos fallidos y los exitosos
+samba_log_auth: /var/log/samba/auth.log
+
+# Texto de samba-tool domain passwordsettings show para cada opción de samba_politica
+samba_politica_etiquetas:
+  complexity: Password complexity
+  history-length: Password history length
+  min-pwd-length: Minimum password length
+  min-pwd-age: Minimum password age (days)
+  max-pwd-age: Maximum password age (days)
+  account-lockout-duration: Account lockout duration (mins)
+  account-lockout-threshold: Account lockout threshold (attempts)
+  reset-account-lockout-after: Reset account lockout after (mins)
