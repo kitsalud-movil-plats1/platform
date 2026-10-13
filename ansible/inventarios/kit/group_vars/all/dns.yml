@@ -17,12 +17,17 @@ dns_registros:
   - { nombre: pacientes, ipv4: "{{ equipos.clinica01.ipv4 }}", ipv6: "{{ equipos.clinica01.ipv6 }}" }
   - { nombre: archivos, ipv4: "{{ equipos.clinica01.ipv4 }}", ipv6: "{{ equipos.clinica01.ipv6 }}" }
   - { nombre: consultas, ipv4: "{{ equipos.clinica01.ipv4 }}", ipv6: "{{ equipos.clinica01.ipv6 }}" }
-  # Registro normal hasta que exista Samba AD (platform#8), que delega ad.salud.movil
+  # Glue de la delegación de ad.salud.movil a Samba AD (platform#8)
   - { nombre: dc01.ad, ipv4: "{{ equipos.clinica01.ipv4 }}", ipv6: "{{ equipos.clinica01.ipv6 }}" }
   - { nombre: comunidad01, ipv4: "{{ equipos.comunidad01.ipv4 }}", ipv6: "{{ equipos.comunidad01.ipv6 }}" }
   - { nombre: biblioteca, ipv4: "{{ equipos.comunidad01.ipv4 }}", ipv6: "{{ equipos.comunidad01.ipv6 }}" }
   - { nombre: videos, ipv4: "{{ equipos.comunidad01.ipv4 }}", ipv6: "{{ equipos.comunidad01.ipv6 }}" }
   - { nombre: registro, ipv4: "{{ equipos.comunidad01.ipv4 }}", ipv6: "{{ equipos.comunidad01.ipv6 }}" }
+
+# Subzonas delegadas: ad.salud.movil la sirve el DNS interno de Samba AD en
+# clinica01 (platform#8, F-25)
+dns_delegaciones:
+  - { nombre: ad, ns: [dc01.ad] }
 
 # Un PTR por dirección (inversas IPv4 e IPv6)
 dns_ptr:

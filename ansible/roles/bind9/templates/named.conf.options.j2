@@ -18,6 +18,8 @@ options {
 	forwarders { {% for f in dns_reenviadores %}{{ f }}; {% endfor %}};
 	forward first;
 	dnssec-validation auto;
+	// salud.movil no cuelga de un TLD real y sus subzonas delegadas no están firmadas
+	validate-except { "{{ dns_zona }}"; };
 
 	version "no disponible";
 };
