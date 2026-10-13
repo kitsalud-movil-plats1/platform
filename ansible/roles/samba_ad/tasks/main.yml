@@ -4,3 +4,6 @@
 
 - name: Dominio y servicio samba-ad-dc
   ansible.builtin.import_tasks: aprovisionamiento.yml
+
+- name: ufw para la delegación DNS
+  ansible.builtin.import_tasks: firewall.yml
