@@ -1,0 +1,14 @@
+---
+# DHIS2 en clinica01 (R6, D-06). Cuentas locales, independientes de AD; las
+# contraseñas están en el vault. La política de DHIS2 exige mayúscula, número
+# y símbolo y rechaza palabras genéricas como "password" o "admin", así que
+# usa la clave alternativa de la convención del grupo (R-14).
+dhis2_admin_password: "{{ vault_dhis2_admin_password }}"
+dhis2_usuarios_password: "{{ vault_dhis2_usuarios_password }}"
+
+# Rol de DHIS2 de cada cuenta (UID de metadatos/kit.json): RolPersCli1 es
+# "Personal clínico" (Capture) y RolAdmiKit1 "Administrador"
+dhis2_usuarios:
+  - { usuario: ana.rojas, nombres: Ana, apellidos: Rojas, rol: RolPersCli1 }
+  - { usuario: carlos.perez, nombres: Carlos, apellidos: Perez, rol: RolPersCli1 }
+  - { usuario: laura.gomez, nombres: Laura, apellidos: Gomez, rol: RolAdmiKit1 }

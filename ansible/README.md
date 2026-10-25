@@ -15,7 +15,9 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `inventarios/*/host_vars/kit01.yml` | Nombres de interfaz de cada rol (`iface_wan`, `iface_lan`, D-14, R-08) y ajustes propios de kit01 |
 | `playbooks/comun.yml` | Aplica el rol `comun` a todos los hosts |
 | `playbooks/vms.yml` | Crea las VMs que falten en kit01 (rol `kit01_vms`) y les aplica el rol `comun` |
-| `playbooks/clinica01.yml` | Aplicaciones de clinica01 con los roles `docker` y `dhis2` del repositorio `apps` (`-e dhis2_estado=stopped` para detener DHIS2) |
+| `playbooks/clinica01.yml` | Aplicaciones de clinica01 con los roles `docker`, `dhis2` y `caddy` del repositorio `apps` (`-e dhis2_estado=stopped` para detener DHIS2) |
+| `inventarios/kit/group_vars/all/dhis2.yml` | Cuentas locales de DHIS2 y su rol (las claves en el vault) |
+| `inventarios/kit/host_vars/clinica01.yml`, `host_vars/comunidad01.yml` | Puertos y orígenes de Caddy en ufw de cada VM |
 | `playbooks/comunidad01.yml` | Aplicaciones de comunidad01 con los roles `docker`, `kiwix` y `caddy` del repositorio `apps` |
 | `inventarios/kit/group_vars/all/contenido.yml` | ZIM de la biblioteca (archivo, carpeta de origen, título y sha256) |
 | `inventarios/kit/group_vars/all/dhcp.yml` | Reservas DHCPv4 de las estaciones de administración (`dhcp_reservas`) |

@@ -1,0 +1,4 @@
+---
+# Caddy en clinica01: HTTPS solo desde la Interna (F-05)
+caddy_origenes: ["{{ redes.interna.ipv4 }}", "{{ redes.interna.ipv6 }}"]
+caddy_puertos: ["443"]

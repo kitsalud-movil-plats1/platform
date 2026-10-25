@@ -1,8 +1,9 @@
 ---
 # Aplicaciones de clinica01 (roles del repositorio apps)
-- name: Docker y DHIS2 en clinica01
+- name: Docker, DHIS2 y Caddy en clinica01
   hosts: clinica01
   become: true
   roles:
     - docker
     - dhis2
+    - caddy
