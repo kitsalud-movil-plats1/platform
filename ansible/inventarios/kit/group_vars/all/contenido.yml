@@ -1,0 +1,19 @@
+---
+# ZIM de la biblioteca (R7, D-08, sección 10.5), de la biblioteca de Kiwix.
+# Se descargan en base, nunca en campo (R-05). Kiwix los sirve desde la
+# carpeta de medios de comunidad01; el flujo de publicación (platform#10)
+# carga la misma lista en el recurso contenido/zim de clinica01.
+contenido_zim_origen: https://download.kiwix.org/zim
+contenido_zim:
+  - archivo: wikipedia_es_medicine_maxi_2026-07.zim
+    carpeta: wikipedia
+    titulo: Wikipedia Médica en español
+    sha256: b10f64c549f1c58531452f76f2add2497235b3fc73e36c9df446292642883d7c
+  - archivo: vikidia_es_all_maxi_2026-09.zim
+    carpeta: vikidia
+    titulo: Vikidia, enciclopedia para niños
+    sha256: 3aedb556f184d1f0a3dbfb537c3998bea871377325beb581d1fead16d718052c
+  - archivo: phet_es_all_2026-08.zim
+    carpeta: phet
+    titulo: Simulaciones PhET en español
+    sha256: 01edd09e5e98d51dd8e5d2caa92f55c843edc15bb6162cd3b045614b1335d952
