@@ -1,6 +1,6 @@
-# Samba AD DC en clinica01
+# Samba AD DC y recursos SMB en clinica01
 
-Identidad centralizada del kit (R10, D-05). El dominio `ad.salud.movil` lo usan el recurso SMB, Grafana y la consulta de formularios. Lo instala y configura el rol `samba_ad` de [`../../ansible/`](../../ansible/) con `playbooks/samba.yml`. Los nombres, grupos, usuarios y la política están en `ansible/inventarios/kit/group_vars/all/samba.yml` y las contraseñas en el vault.
+Identidad centralizada del kit (R10, D-05) y almacenamiento compartido (R9). El dominio `ad.salud.movil` lo usan los recursos SMB `archivos` y `contenido`, Grafana y la consulta de formularios. Lo instala y configura el rol `samba_ad` de [`../../ansible/`](../../ansible/) con `playbooks/samba.yml`. Los nombres, grupos, usuarios, recursos y la política están en `ansible/inventarios/kit/group_vars/all/samba.yml` y las contraseñas en el vault.
 
 | Elemento | Valor |
 |---|---|
@@ -8,12 +8,16 @@ Identidad centralizada del kit (R10, D-05). El dominio `ad.salud.movil` lo usan 
 | Dominio | Realm `AD.SALUD.MOVIL`, dominio NetBIOS `SALUD`, DC `DC01` (`dc01.ad.salud.movil`). El hostname de la VM sigue siendo `clinica01` |
 | DNS | DNS interno de Samba (`SAMBA_INTERNAL`) para `ad.salud.movil`. Lo demás lo reenvía a BIND9 en kit01 (`10.20.20.10` y `::10`). clinica01 resuelve por BIND9, que delega la subzona `ad` a este DC |
 | Escucha | Solo `lo`, `10.20.20.11` y `fd5a:fc7e:d716:20::11` (`bind interfaces only`). El 53 de systemd-resolved (`127.0.0.53` y `127.0.0.54`) no se toca |
-| Firewall (ufw) | `53/udp` y `53/tcp` solo desde kit01 (`10.20.20.1`, `.10`, `::1` y `::10`), para la delegación (F-25). Los demás puertos del DC los abre la tarea que los usa (445 en platform#9, 636 en observability#2) |
-| Grupos | `clinicos` y `admins` |
-| Usuarios de prueba | `ana.rojas` y `carlos.perez` en `clinicos`, `laura.gomez` en `admins` |
+| Firewall (ufw) | `53/udp` y `53/tcp` solo desde kit01 (`10.20.20.1`, `.10`, `::1` y `::10`), para la delegación (F-25). `445/tcp` solo desde la Interna (`10.20.10.0/24` y `fd5a:fc7e:d716:10::/64`, F-05). El 636 lo abre observability#2 |
+| Grupos | `clinicos` (gid 10001) y `admins` (gid 10002) |
+| Usuarios de prueba | `ana.rojas` (uid 10101) y `carlos.perez` (10102) en `clinicos`, `laura.gomez` (10103) en `admins` |
+| IDs POSIX | Fijos con los atributos RFC2307 (`gidNumber` y `uidNumber`), que el DC usa por `idmap_ldb:use rfc2307`. Así los dueños de los archivos son los mismos si el dominio se reconstruye y se restaura un backup (P11) |
+| Recursos SMB | `\\archivos.salud.movil\archivos` en `/srv/samba/archivos`, solo para `clinicos`, con cifrado obligatorio. `\\archivos.salud.movil\contenido` en `/srv/samba/contenido` (`zim/`, `salud/` y `comunidad/`), con escritura para `clinicos` y `admins` y cifrado deseado |
+| Protocolo | SMB3 como mínimo en todo el DC (`server min protocol = SMB3`), así que SMB1 y SMB2 se rechazan |
+| Kerberos | SPN `cifs/archivos.salud.movil` en la cuenta `DC01$`. Un usuario con ticket entra sin contraseña; los equipos fuera del dominio usan NTLMv2 |
 | Política de contraseñas | Sin complejidad, longitud mínima 8, historial de 5, sin vencimiento y bloqueo de 15 minutos después de 5 intentos fallidos. Las contraseñas son las académicas del grupo (R-14) |
 | Log de autenticación | `/var/log/samba/auth.log` (`auth_audit:3`), con los intentos fallidos y exitosos de Kerberos, NTLM y LDAP. Rotación semanal en `/etc/logrotate.d/samba-auth` |
-| Datos | `/var/lib/samba/` (base del dominio y `sysvol`) |
+| Datos | `/var/lib/samba/` (base del dominio y `sysvol`) y `/srv/samba/` (recursos, en el disco de datos de 120 GB) |
 
 ## Cómo se despliega
 
@@ -30,7 +34,10 @@ ansible-playbook playbooks/dns.yml      # delegación de ad.salud.movil en BIND9
 - **Usuarios.** La contraseña solo se pone al crear el usuario. Cambiarla en el vault no cambia la de un usuario que ya existe.
 - **Idempotencia.** La política se compara con `samba-tool domain passwordsettings show` y los grupos, usuarios y miembros con sus listados, así que una segunda ejecución termina con `changed=0`.
 
-Para agregar un usuario o un grupo se edita `samba.yml` y se vuelve a ejecutar el playbook.
+- **IDs.** El `gidNumber` y el `uidNumber` se agregan con `samba-tool group addunixattrs` y `user addunixattrs` solo si faltan, y después se vacía la caché de winbind (`net cache flush`). Cambiar un número en `samba.yml` no cambia uno que ya existe.
+- **Recursos.** Cada carpeta es de `root` y del primer grupo del recurso, con modo `2770` y una ACL POSIX (normal y por defecto) con `rwx` para cada grupo del recurso. Los recursos no usan ACL de Windows (`nt acl support = no`, sin `acl_xattr`), así que el kernel aplica el setgid y la ACL por defecto, y todo lo que se crea queda del grupo del recurso con `rw` para sus grupos (`create mask = 0660`, `directory mask = 2770`). Los permisos se cambian en `samba.yml`, no desde el Explorador de Windows.
+
+Para agregar un usuario, un grupo o un recurso se edita `samba.yml` y se vuelve a ejecutar el playbook. El primer grupo de un usuario es su grupo POSIX principal.
 
 ## Cómo se verifica
 
@@ -45,6 +52,21 @@ Para agregar un usuario o un grupo se edita `samba.yml` y se vuelve a ejecutar e
 | `sudo samba-tool domain passwordsettings show` | Los valores de `samba_politica` |
 | Una clave errada (`kinit` o `smbclient -L //10.20.20.11 -U usuario%x`) y `sudo grep WRONG_PASSWORD /var/log/samba/auth.log` | Una línea por intento, con `remote host [ipv4:...]` o `[ipv6:...]` |
 
+**Recursos SMB.** `smbclient` lee la contraseña de la variable `PASSWD`. Cada prueba se repite con `-I 10.20.20.11` y con `-I fd5a:fc7e:d716:20::11`.
+
+| Comando | Resultado esperado |
+|---|---|
+| `smbclient //archivos.salud.movil/archivos -U 'SALUD\ana.rojas' -c 'put /etc/hostname prueba.txt; get prueba.txt /tmp/p.txt'` | `putting file` y `getting file` |
+| `smbclient //archivos.salud.movil/archivos -U 'SALUD\laura.gomez' -c ls` | `tree connect failed: NT_STATUS_ACCESS_DENIED` (no está en `clinicos`) |
+| `laura.gomez` crea un archivo en `contenido/salud` y `ana.rojas` lo sobrescribe | Las dos escrituras funcionan |
+| `ls -ln /srv/samba/archivos` y `getfacl -n` de un archivo nuevo | Grupo `10001`, modo `rw-rw----` y `group:10002:rwx` en los de `contenido` |
+| `smbclient ... -m NT1 -c ls` y `-m SMB2` | `NT_STATUS_INVALID_PARAMETER_MIX` y `NT_STATUS_NOT_SUPPORTED` |
+| Una sesión abierta con `--client-protection=off` y `sudo smbstatus -S` | `SMB3_11` y `AES-128-GCM` en `archivos`, aunque el cliente no pida cifrado |
+| `kinit ana.rojas@AD.SALUD.MOVIL`, `smbclient //archivos.salud.movil/archivos --use-kerberos=required -N -c ls </dev/null` y `klist` | Lista el recurso y aparece el ticket `cifs/archivos.salud.movil@AD.SALUD.MOVIL` |
+| `sudo ufw status \| grep 445` | Solo `10.20.10.0/24` y `fd5a:fc7e:d716:10::/64` |
+
+Desde la Interna, en Linux `smbclient //archivos.salud.movil/archivos -U 'SALUD\ana.rojas'` o `sudo mount -t cifs //archivos.salud.movil/archivos /mnt -o username=ana.rojas,domain=SALUD,vers=3.1.1,seal`, y en Windows `\\archivos.salud.movil\archivos` con el usuario `SALUD\ana.rojas`. Desde la Comunidad el 445 no responde y kit01 lo registra con `fw-drop IN=br-com ... DPT=445`.
+
 Para probar Kerberos por una sola familia se usa un `krb5.conf` temporal con `KRB5_CONFIG`, con `kdc = 10.20.20.11` o `kdc = [fd5a:fc7e:d716:20::11]` dentro del bloque del realm.
 
 ## Diagnóstico
@@ -53,4 +75,8 @@ Para probar Kerberos por una sola familia se usa un `krb5.conf` temporal con `KR
 - **`host -t SRV` da `NXDOMAIN` o `SERVFAIL` desde los clientes.** Desde kit01, `dig @10.20.20.11 SOA ad.salud.movil`. Si no responde, revisar ufw en clinica01 (`sudo ufw status`) y el servicio. Si responde, revisar la delegación en BIND9 (`kit01/bind9/README.md`).
 - **`kinit: Cannot find KDC`.** El nombre `dc01.ad.salud.movil` no resuelve. Revisar `/etc/hosts` y el `krb5.conf`.
 - **`kinit: Clock skew too great`.** La hora de clinica01 no está sincronizada (`chronyc tracking`).
+- **`NT_STATUS_ACCESS_DENIED` con un usuario que sí está en el grupo.** `wbinfo --user-groups=<usuario>` tiene que incluir el gid del grupo. Si falta, `sudo net cache flush` y repetir.
+- **Archivos nuevos con grupo `100` y entradas `user:<uid>` en la ACL.** Es la herencia de ACL de Windows de `acl_xattr`. El recurso tiene que tener `nt acl support = no` y `vfs objects = dfs_samba4` (`testparm -s --section-name=archivos`).
+- **El 445 no responde desde la Interna.** En kit01, `sudo nft list chain inet filtro forward | grep 445` (el contador sube con cada conexión) y `journalctl -k | grep fw-drop`; en clinica01, `sudo ufw status`.
+- **`smbclient --use-kerberos=required` se queda esperando.** Pide contraseña aunque use el ticket; se agrega `-N`.
 - **Usuario bloqueado.** `badPwdCount` y `lockoutTime` en `sudo samba-tool user show <usuario>`. Se desbloquea solo a los 15 minutos o con `sudo samba-tool user unlock <usuario>`.
