@@ -8,12 +8,16 @@ samba_dc_fqdn: "dc01.{{ samba_realm | lower }}"
 samba_admin_password: "{{ vault_samba_admin_password }}"
 samba_usuarios_password: "{{ vault_samba_usuarios_password }}"
 
-# Grupos y usuarios individuales de prueba (D-18)
-samba_grupos: [clinicos, admins]
+# Grupos y usuarios individuales de prueba (D-18). El gid y el uid son fijos
+# (RFC2307) para que los dueños de los archivos de los recursos SMB sean los
+# mismos si el dominio se reconstruye y se restaura un backup (P11).
+samba_grupos:
+  - { nombre: clinicos, gid: 10001 }
+  - { nombre: admins, gid: 10002 }
 samba_usuarios:
-  - { nombre: ana.rojas, nombres: Ana, apellidos: Rojas, grupos: [clinicos] }
-  - { nombre: carlos.perez, nombres: Carlos, apellidos: Perez, grupos: [clinicos] }
-  - { nombre: laura.gomez, nombres: Laura, apellidos: Gomez, grupos: [admins] }
+  - { nombre: ana.rojas, nombres: Ana, apellidos: Rojas, uid: 10101, grupos: [clinicos] }
+  - { nombre: carlos.perez, nombres: Carlos, apellidos: Perez, uid: 10102, grupos: [clinicos] }
+  - { nombre: laura.gomez, nombres: Laura, apellidos: Gomez, uid: 10103, grupos: [admins] }
 
 # Política de contraseñas. Sin complejidad ni vencimiento por las credenciales
 # académicas (R-14); bloqueo de 15 minutos después de 5 intentos fallidos.
