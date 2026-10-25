@@ -1,0 +1,3 @@
+---
+- name: Intermedio de la VM firmado por la raíz del kit
+  ansible.builtin.import_tasks: intermedio.yml

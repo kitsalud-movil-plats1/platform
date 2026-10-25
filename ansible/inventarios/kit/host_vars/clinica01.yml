@@ -2,3 +2,6 @@
 # Caddy en clinica01: HTTPS solo desde la Interna (F-05)
 caddy_origenes: ["{{ redes.interna.ipv4 }}", "{{ redes.interna.ipv6 }}"]
 caddy_puertos: ["443"]
+
+# Nombres que puede firmar el intermedio de la CA del kit en clinica01 (apps#3)
+ca_nombres: [pacientes, consultas, archivos]

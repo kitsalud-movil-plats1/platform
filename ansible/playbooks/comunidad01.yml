@@ -6,4 +6,5 @@
   roles:
     - docker
     - kiwix
+    - ca_interna
     - caddy
