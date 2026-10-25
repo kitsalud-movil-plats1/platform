@@ -12,3 +12,7 @@ dhis2_usuarios:
   - { usuario: ana.rojas, nombres: Ana, apellidos: Rojas, rol: RolPersCli1 }
   - { usuario: carlos.perez, nombres: Carlos, apellidos: Perez, rol: RolPersCli1 }
   - { usuario: laura.gomez, nombres: Laura, apellidos: Gomez, rol: RolAdmiKit1 }
+
+# Usuario formularios de la base prerregistro (apps#6): solo INSERT, desde
+# comunidad01. Lo usan el rol dhis2 (clinica01) y el rol formularios (comunidad01).
+dhis2_prerregistro_password: "{{ vault_formularios_db_password }}"
