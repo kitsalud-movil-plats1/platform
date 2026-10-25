@@ -1,0 +1,19 @@
+---
+# CA interna del kit (D-16, apps#3). La raíz vive solo en kit01; cada VM tiene
+# un intermedio limitado a sus nombres, que Caddy usa con tls internal.
+ca_nombre: Kit de salud movil
+ca_dir: /etc/kitsalud/ca
+ca_raiz_dias: 3650
+ca_intermedio_dias: 730
+ca_intermedio_renovar: "+90d"
+ca_hoja_dias: 397
+ca_hoja_renovar: "+30d"
+
+# Certificados que firma la raíz directamente en kit01 (servicios del host)
+ca_hojas_kit01: [monitoreo]
+ca_tls_dir: /etc/kitsalud/tls
+
+# En cada VM: carpeta que monta Caddy en /pki y nombres que puede firmar su
+# intermedio (ca_nombres, en host_vars de cada VM)
+ca_pki_vm: /srv/caddy/pki
+caddy_dir: /srv/caddy
