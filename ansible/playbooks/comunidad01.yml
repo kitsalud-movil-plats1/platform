@@ -1,10 +1,11 @@
 ---
 # Aplicaciones de comunidad01 (roles del repositorio apps)
-- name: Docker, Kiwix y Caddy en comunidad01
+- name: Docker, Kiwix, formularios y Caddy en comunidad01
   hosts: comunidad01
   become: true
   roles:
     - docker
     - kiwix
     - ca_interna
+    - formularios
     - caddy
