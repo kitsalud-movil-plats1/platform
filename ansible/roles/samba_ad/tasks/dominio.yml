@@ -98,3 +98,16 @@
 
 - name: IDs nuevos visibles para los recursos
   ansible.builtin.meta: flush_handlers
+
+# Kerberos para \\archivos.salud.movil: el ticket se pide para ese nombre, que
+# tiene que estar en la cuenta del DC (sin él, el cliente usa NTLMv2)
+- name: SPN actuales del DC
+  ansible.builtin.command:
+    argv: [samba-tool, spn, list, "{{ samba_netbios }}$"]
+  register: samba_spn_hoy
+  changed_when: false
+
+- name: SPN de los recursos SMB
+  ansible.builtin.command:
+    argv: [samba-tool, spn, add, "{{ item }}", "{{ samba_netbios }}$"]
+  loop: "{{ samba_spn | reject('in', samba_spn_hoy.stdout_lines | map('trim') | list) | list }}"

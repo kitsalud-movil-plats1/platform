@@ -36,6 +36,9 @@ samba_dns_origenes:
   - "{{ redes.servidores.gw6 }}"
   - "{{ servicios_kit01.ipv6 }}"
 
+# Nombre de servicio de los recursos SMB (sección 9)
+samba_spn: ["cifs/archivos.{{ dominio }}"]
+
 # Los recursos SMB se usan desde la Interna (F-05)
 samba_smb_origenes: ["{{ redes.interna.ipv4 }}", "{{ redes.interna.ipv6 }}"]
 
