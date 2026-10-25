@@ -1,0 +1,17 @@
+---
+# CA interna del kit en kit01 (apps#3): raíz y certificados de los servicios
+# del host. Los intermedios de las VMs los firma el rol ca_interna dentro de
+# playbooks/clinica01.yml y playbooks/comunidad01.yml.
+- name: CA interna en kit01
+  hosts: kit01
+  become: true
+  tasks:
+    - name: Raíz del kit
+      ansible.builtin.include_role:
+        name: ca_interna
+        tasks_from: raiz
+
+    - name: Certificados de los servicios de kit01
+      ansible.builtin.include_role:
+        name: ca_interna
+        tasks_from: hojas

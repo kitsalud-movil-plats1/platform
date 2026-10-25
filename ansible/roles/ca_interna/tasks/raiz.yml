@@ -1,0 +1,46 @@
+---
+# Raíz del kit en kit01. La llave nunca sale de kit01 ni entra a un repositorio.
+- name: Carpetas de la CA
+  ansible.builtin.file:
+    path: "{{ item.ruta }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "{{ item.modo }}"
+  loop:
+    - { ruta: "{{ ca_dir }}", modo: "0700" }
+    - { ruta: "{{ ca_dir }}/intermedios", modo: "0700" }
+    - { ruta: "{{ ca_tls_dir }}", modo: "0750" }
+
+- name: Llave de la raíz
+  community.crypto.openssl_privatekey:
+    path: "{{ ca_dir }}/raiz.key"
+    type: ECC
+    curve: secp256r1
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: CSR de la raíz
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: "{{ ca_dir }}/raiz.key"
+    common_name: "{{ ca_nombre }} - Raiz"
+    organization_name: "{{ ca_nombre }}"
+    basic_constraints: ["CA:TRUE"]
+    basic_constraints_critical: true
+    key_usage: [keyCertSign, cRLSign]
+    key_usage_critical: true
+    use_common_name_for_san: false
+  register: ca_raiz_csr
+  changed_when: false
+
+- name: Certificado de la raíz
+  community.crypto.x509_certificate:
+    path: "{{ ca_dir }}/raiz.crt"
+    csr_content: "{{ ca_raiz_csr.csr }}"
+    privatekey_path: "{{ ca_dir }}/raiz.key"
+    provider: selfsigned
+    selfsigned_not_after: "+{{ ca_raiz_dias }}d"
+    owner: root
+    group: root
+    mode: "0644"

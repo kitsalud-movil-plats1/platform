@@ -23,6 +23,8 @@ dns_registros:
   - { nombre: biblioteca, ipv4: "{{ equipos.comunidad01.ipv4 }}", ipv6: "{{ equipos.comunidad01.ipv6 }}" }
   - { nombre: videos, ipv4: "{{ equipos.comunidad01.ipv4 }}", ipv6: "{{ equipos.comunidad01.ipv6 }}" }
   - { nombre: registro, ipv4: "{{ equipos.comunidad01.ipv4 }}", ipv6: "{{ equipos.comunidad01.ipv6 }}" }
+  # Raíz de la CA del kit para instalarla en los equipos (apps#3)
+  - { nombre: ca, ipv4: "{{ equipos.comunidad01.ipv4 }}", ipv6: "{{ equipos.comunidad01.ipv6 }}" }
 
 # Subzonas delegadas: ad.salud.movil la sirve el DNS interno de Samba AD en
 # clinica01 (platform#8, F-25)

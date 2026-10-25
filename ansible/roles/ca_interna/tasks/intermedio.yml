@@ -1,0 +1,118 @@
+---
+# Intermedio de la VM. La llave y el CSR se generan en la VM; kit01 firma el
+# CSR con la raíz y la VM recibe el certificado. El intermedio solo puede
+# firmar los nombres de ca_nombres (name constraints).
+- name: Raíz del kit presente en kit01
+  ansible.builtin.stat:
+    path: "{{ ca_dir }}/raiz.crt"
+  delegate_to: kit01
+  register: ca_raiz_stat
+
+- name: Falta la raíz
+  ansible.builtin.assert:
+    that: ca_raiz_stat.stat.exists
+    fail_msg: "Primero ansible-playbook playbooks/ca.yml (raíz en kit01)"
+
+- name: Carpeta de la PKI de Caddy
+  ansible.builtin.file:
+    path: "{{ ca_pki_vm }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Llave del intermedio
+  community.crypto.openssl_privatekey:
+    path: "{{ ca_pki_vm }}/intermedio.key"
+    type: ECC
+    curve: secp256r1
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Renovar los certificados de Caddy
+
+- name: CSR del intermedio
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: "{{ ca_pki_vm }}/intermedio.key"
+    common_name: "{{ ca_nombre }} - {{ inventory_hostname }}"
+    organization_name: "{{ ca_nombre }}"
+    basic_constraints: ["CA:TRUE", "pathlen:0"]
+    basic_constraints_critical: true
+    key_usage: [keyCertSign, cRLSign, digitalSignature]
+    key_usage_critical: true
+    name_constraints_permitted: "{{ ca_nombres | map('regex_replace', '^', 'DNS:') | map('regex_replace', '$', '.' ~ dominio) | list }}"
+    name_constraints_critical: true
+    use_common_name_for_san: false
+  register: ca_csr
+  changed_when: false
+
+- name: Vigencia del intermedio firmado
+  community.crypto.x509_certificate_info:
+    path: "{{ ca_dir }}/intermedios/{{ inventory_hostname }}.crt"
+    valid_at:
+      renovar: "{{ ca_intermedio_renovar }}"
+  delegate_to: kit01
+  register: ca_inter_info
+  failed_when: false
+
+# kit01 firma de nuevo si cambia la llave o los nombres, o si vence pronto
+- name: Firmar el intermedio con la raíz
+  community.crypto.x509_certificate:
+    path: "{{ ca_dir }}/intermedios/{{ inventory_hostname }}.crt"
+    csr_content: "{{ ca_csr.csr }}"
+    provider: ownca
+    ownca_path: "{{ ca_dir }}/raiz.crt"
+    ownca_privatekey_path: "{{ ca_dir }}/raiz.key"
+    ownca_not_after: "+{{ ca_intermedio_dias }}d"
+    force: "{{ not (ca_inter_info.valid_at.renovar | default(false)) }}"
+    owner: root
+    group: root
+    mode: "0644"
+  delegate_to: kit01
+
+- name: Certificados de la raíz y del intermedio desde kit01
+  ansible.builtin.slurp:
+    src: "{{ item }}"
+  loop: ["{{ ca_dir }}/raiz.crt", "{{ ca_dir }}/intermedios/{{ inventory_hostname }}.crt"]
+  delegate_to: kit01
+  register: ca_certs
+
+- name: Raíz e intermedio en la VM
+  ansible.builtin.copy:
+    content: "{{ item.content | b64decode }}"
+    dest: "{{ ca_pki_vm }}/{{ nombre }}"
+    owner: root
+    group: root
+    mode: "0644"
+  vars:
+    nombre: "{{ 'raiz.crt' if item.item.endswith('raiz.crt') else 'intermedio.crt' }}"
+  loop: "{{ ca_certs.results }}"
+  loop_control:
+    label: "{{ nombre }}"
+  notify: Renovar los certificados de Caddy
+
+# La VM que publica la raíz (ca.salud.movil) la deja junto a la página
+- name: Carpeta pública de Caddy
+  ansible.builtin.file:
+    path: "{{ caddy_dir }}/publica"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: ca_publicar | default(false)
+
+- name: Raíz publicada para descargar
+  ansible.builtin.copy:
+    content: "{{ (ca_certs.results | selectattr('item', 'search', 'raiz.crt$') | first).content | b64decode }}"
+    dest: "{{ caddy_dir }}/publica/raiz.crt"
+    owner: root
+    group: root
+    mode: "0644"
+  when: ca_publicar | default(false)
+
+# Caddy creó su propia CA antes de apps#3; ya no se usa
+- name: Quitar la CA que Caddy generó sola
+  ansible.builtin.file:
+    path: "{{ caddy_dir }}/data/caddy/pki/authorities/local"
+    state: absent
+  notify: Renovar los certificados de Caddy

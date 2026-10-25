@@ -1,0 +1,13 @@
+---
+# Con una CA nueva, los certificados que Caddy guardó firmados por la anterior
+# se borran para que los vuelva a emitir al arrancar
+- name: Renovar los certificados de Caddy
+  ansible.builtin.file:
+    path: "{{ caddy_dir }}/data/caddy/certificates/local"
+    state: absent
+  notify: Reiniciar caddy por la CA
+
+- name: Reiniciar caddy por la CA
+  ansible.builtin.command: docker compose restart caddy
+  args:
+    chdir: "{{ caddy_dir }}"
