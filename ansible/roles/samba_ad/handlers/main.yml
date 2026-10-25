@@ -3,3 +3,7 @@
   ansible.builtin.systemd_service:
     name: samba-ad-dc
     state: restarted
+
+- name: Vaciar la caché de winbind
+  ansible.builtin.command: net cache flush
+  changed_when: true

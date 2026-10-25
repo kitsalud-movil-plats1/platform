@@ -9,7 +9,7 @@
 - name: Grupos del kit
   ansible.builtin.command:
     argv: [samba-tool, group, add, "{{ item }}"]
-  loop: "{{ samba_grupos | difference(samba_grupos_hoy.stdout_lines) }}"
+  loop: "{{ samba_grupos | map(attribute='nombre') | difference(samba_grupos_hoy.stdout_lines) }}"
 
 - name: Usuarios existentes
   ansible.builtin.command: samba-tool user list
@@ -33,17 +33,81 @@
 
 - name: Miembros actuales de cada grupo
   ansible.builtin.command:
-    argv: [samba-tool, group, listmembers, "{{ item }}"]
+    argv: [samba-tool, group, listmembers, "{{ item.nombre }}"]
   loop: "{{ samba_grupos }}"
+  loop_control:
+    label: "{{ item.nombre }}"
   register: samba_miembros_hoy
   changed_when: false
 
 - name: Miembros de cada grupo
   ansible.builtin.command:
-    argv: [samba-tool, group, addmembers, "{{ item.item }}", "{{ faltan | join(',') }}"]
+    argv: [samba-tool, group, addmembers, "{{ item.item.nombre }}", "{{ faltan | join(',') }}"]
   vars:
-    faltan: "{{ samba_usuarios | selectattr('grupos', 'contains', item.item) | map(attribute='nombre') | difference(item.stdout_lines) }}"
+    faltan: "{{ samba_usuarios | selectattr('grupos', 'contains', item.item.nombre) | map(attribute='nombre') | difference(item.stdout_lines) }}"
   loop: "{{ samba_miembros_hoy.results }}"
   loop_control:
-    label: "{{ item.item }}"
+    label: "{{ item.item.nombre }}"
   when: faltan | length > 0
+
+# gid y uid fijos (RFC2307). idmap_ldb:use rfc2307 hace que el DC los use en
+# lugar de los que asigna idmap.ldb (3000000 en adelante).
+- name: gidNumber actual de cada grupo
+  ansible.builtin.command:
+    argv: [samba-tool, group, show, "{{ item.nombre }}", --attributes=gidNumber]
+  loop: "{{ samba_grupos }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+  register: samba_gid_hoy
+  changed_when: false
+
+- name: gidNumber de cada grupo
+  ansible.builtin.command:
+    argv: [samba-tool, group, addunixattrs, "{{ item.item.nombre }}", "{{ item.item.gid }}"]
+  loop: "{{ samba_gid_hoy.results }}"
+  loop_control:
+    label: "{{ item.item.nombre }}"
+  when: "'gidNumber:' not in item.stdout"
+  notify: Vaciar la caché de winbind
+
+- name: uidNumber actual de cada usuario
+  ansible.builtin.command:
+    argv: [samba-tool, user, show, "{{ item.nombre }}", --attributes=uidNumber]
+  loop: "{{ samba_usuarios }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+  register: samba_uid_hoy
+  changed_when: false
+
+# El grupo principal POSIX es el primero de la lista del usuario
+- name: uidNumber de cada usuario
+  ansible.builtin.command:
+    argv:
+      - samba-tool
+      - user
+      - addunixattrs
+      - "{{ item.item.nombre }}"
+      - "{{ item.item.uid }}"
+      - "--gid-number={{ (samba_grupos | selectattr('nombre', 'eq', item.item.grupos[0]) | first).gid }}"
+      - --login-shell=/usr/sbin/nologin
+  loop: "{{ samba_uid_hoy.results }}"
+  loop_control:
+    label: "{{ item.item.nombre }}"
+  when: "'uidNumber:' not in item.stdout"
+  notify: Vaciar la caché de winbind
+
+- name: IDs nuevos visibles para los recursos
+  ansible.builtin.meta: flush_handlers
+
+# Kerberos para \\archivos.salud.movil: el ticket se pide para ese nombre, que
+# tiene que estar en la cuenta del DC (sin él, el cliente usa NTLMv2)
+- name: SPN actuales del DC
+  ansible.builtin.command:
+    argv: [samba-tool, spn, list, "{{ samba_netbios }}$"]
+  register: samba_spn_hoy
+  changed_when: false
+
+- name: SPN de los recursos SMB
+  ansible.builtin.command:
+    argv: [samba-tool, spn, add, "{{ item }}", "{{ samba_netbios }}$"]
+  loop: "{{ samba_spn | reject('in', samba_spn_hoy.stdout_lines | map('trim') | list) | list }}"
