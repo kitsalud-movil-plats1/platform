@@ -16,6 +16,9 @@
 	# Intentos de autenticación (fallidos y exitosos) en un archivo propio
 	log level = 1 auth_audit:3@{{ samba_log_auth }}
 
+	# SMB3 como mínimo; SMB1 y SMB2 quedan rechazados (R9)
+	server min protocol = SMB3
+
 [sysvol]
 	path = /var/lib/samba/sysvol
 	read only = No
@@ -23,3 +26,21 @@
 [netlogon]
 	path = /var/lib/samba/sysvol/{{ samba_realm | lower }}/scripts
 	read only = No
+{% for r in samba_recursos %}
+
+# {{ r.descripcion }} (R9, platform#9)
+[{{ r.nombre }}]
+	path = {{ samba_recursos_raiz }}/{{ r.nombre }}
+	comment = {{ r.descripcion }}
+	valid users = {% for g in r.grupos %}@"{{ samba_dominio }}\{{ g }}"{{ ' ' if not loop.last }}{% endfor %}
+
+	read only = No
+	server smb encrypt = {{ r.cifrado }}
+	# Permisos POSIX, sin ACL de Windows ni acl_xattr: el kernel aplica el
+	# setgid y la ACL por defecto de la carpeta, así lo nuevo queda del grupo
+	# del recurso y con escritura para todos sus grupos
+	vfs objects = dfs_samba4
+	nt acl support = no
+	create mask = 0660
+	directory mask = 2770
+{% endfor %}

@@ -30,3 +30,18 @@ samba_politica:
   account-lockout-threshold: 5
   account-lockout-duration: 15
   reset-account-lockout-after: 15
+
+# Recursos SMB en el disco de datos (R9, platform#9). El primer grupo es el
+# dueño de la carpeta; todos los grupos de la lista leen y escriben.
+samba_recursos_raiz: /srv/samba
+samba_recursos:
+  - nombre: archivos
+    descripcion: Documentos y exportaciones del personal clínico
+    grupos: [clinicos]
+    cifrado: required
+    carpetas: []
+  - nombre: contenido
+    descripcion: Medios y ZIM que se publican en comunidad01
+    grupos: [clinicos, admins]
+    cifrado: desired
+    carpetas: [zim, salud, comunidad]

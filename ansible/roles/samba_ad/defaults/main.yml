@@ -49,3 +49,15 @@ samba_politica_etiquetas:
   account-lockout-duration: Account lockout duration (mins)
   account-lockout-threshold: Account lockout threshold (attempts)
   reset-account-lockout-after: Reset account lockout after (mins)
+
+# gid fijo de cada grupo, por nombre
+samba_gid: "{{ samba_grupos | items2dict(key_name='nombre', value_name='gid') }}"
+
+# Carpeta de cada recurso y sus subcarpetas, con los grupos del recurso
+samba_recursos_carpetas: >-
+  {%- set l = [] -%}
+  {%- for r in samba_recursos -%}
+  {%- for c in [''] + r.carpetas -%}
+  {%- set _ = l.append({'ruta': samba_recursos_raiz ~ '/' ~ r.nombre ~ (('/' ~ c) if c else ''), 'grupos': r.grupos}) -%}
+  {%- endfor -%}
+  {%- endfor -%}{{ l }}

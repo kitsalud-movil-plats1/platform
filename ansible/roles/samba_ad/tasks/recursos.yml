@@ -1,0 +1,40 @@
+---
+# Carpetas de los recursos SMB. Sin libnss-winbind el DC no resuelve los
+# nombres de AD en el sistema, así que los permisos usan el gid fijo (dominio.yml).
+- name: Paquete acl (setfacl y getfacl)
+  ansible.builtin.apt:
+    name: acl
+    state: present
+
+- name: Raíz de los recursos
+  ansible.builtin.file:
+    path: "{{ samba_recursos_raiz }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Carpeta de cada recurso y sus subcarpetas
+  ansible.builtin.file:
+    path: "{{ item.ruta }}"
+    state: directory
+    owner: root
+    group: "{{ samba_gid[item.grupos[0]] }}"
+    mode: "2770"
+  loop: "{{ samba_recursos_carpetas }}"
+  loop_control:
+    label: "{{ item.ruta }}"
+
+# Cada grupo del recurso con rwx, también en la ACL por defecto para que lo
+# que se cree adentro lo hereden
+- name: ACL de los grupos de cada recurso
+  ansible.posix.acl:
+    path: "{{ item.0.ruta }}"
+    etype: group
+    entity: "{{ samba_gid[item.1] }}"
+    permissions: rwx
+    default: "{{ item.2 }}"
+    state: present
+  loop: "{{ samba_recursos_carpetas | subelements('grupos') | product([false, true]) | map('flatten', levels=1) | list }}"
+  loop_control:
+    label: "{{ item.0.ruta }} {{ item.1 }}{{ ' (default)' if item.2 else '' }}"

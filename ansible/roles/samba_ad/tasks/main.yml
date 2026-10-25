@@ -10,3 +10,6 @@
 
 - name: Grupos y usuarios
   ansible.builtin.import_tasks: dominio.yml
+
+- name: Recursos SMB
+  ansible.builtin.import_tasks: recursos.yml
