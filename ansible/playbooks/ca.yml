@@ -10,3 +10,8 @@
       ansible.builtin.include_role:
         name: ca_interna
         tasks_from: raiz
+
+    - name: Certificados de los servicios de kit01
+      ansible.builtin.include_role:
+        name: ca_interna
+        tasks_from: hojas

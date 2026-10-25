@@ -1,0 +1,49 @@
+---
+# Certificados de los servicios de kit01, firmados por la raíz (por ejemplo
+# monitoreo.salud.movil para Grafana, observability#2)
+- name: Llaves de los servicios de kit01
+  community.crypto.openssl_privatekey:
+    path: "{{ ca_tls_dir }}/{{ item }}.key"
+    type: ECC
+    curve: secp256r1
+    owner: root
+    group: root
+    mode: "0640"
+  loop: "{{ ca_hojas_kit01 }}"
+
+- name: CSR de los servicios de kit01
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: "{{ ca_tls_dir }}/{{ item }}.key"
+    common_name: "{{ item }}.{{ dominio }}"
+    subject_alt_name: ["DNS:{{ item }}.{{ dominio }}"]
+    basic_constraints: ["CA:FALSE"]
+    key_usage: [digitalSignature]
+    extended_key_usage: [serverAuth]
+  loop: "{{ ca_hojas_kit01 }}"
+  register: ca_hojas_csr
+  changed_when: false
+
+- name: Vigencia de los certificados de kit01
+  community.crypto.x509_certificate_info:
+    path: "{{ ca_tls_dir }}/{{ item }}.crt"
+    valid_at:
+      renovar: "{{ ca_hoja_renovar }}"
+  loop: "{{ ca_hojas_kit01 }}"
+  register: ca_hojas_info
+  failed_when: false
+
+- name: Firmar los certificados de kit01 con la raíz
+  community.crypto.x509_certificate:
+    path: "{{ ca_tls_dir }}/{{ item.0 }}.crt"
+    csr_content: "{{ item.1.csr }}"
+    provider: ownca
+    ownca_path: "{{ ca_dir }}/raiz.crt"
+    ownca_privatekey_path: "{{ ca_dir }}/raiz.key"
+    ownca_not_after: "+{{ ca_hoja_dias }}d"
+    force: "{{ not (item.2.valid_at.renovar | default(false)) }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ ca_hojas_kit01 | zip(ca_hojas_csr.results, ca_hojas_info.results) | list }}"
+  loop_control:
+    label: "{{ item.0 }}"
