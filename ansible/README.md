@@ -16,6 +16,8 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `playbooks/comun.yml` | Aplica el rol `comun` a todos los hosts |
 | `playbooks/vms.yml` | Crea las VMs que falten en kit01 (rol `kit01_vms`) y les aplica el rol `comun` |
 | `playbooks/clinica01.yml` | Aplicaciones de clinica01 con los roles `docker` y `dhis2` del repositorio `apps` (`-e dhis2_estado=stopped` para detener DHIS2) |
+| `playbooks/comunidad01.yml` | Aplicaciones de comunidad01 con los roles `docker`, `kiwix` y `caddy` del repositorio `apps` |
+| `inventarios/kit/group_vars/all/contenido.yml` | ZIM de la biblioteca (archivo, carpeta de origen, título y sha256) |
 | `inventarios/kit/group_vars/all/dhcp.yml` | Reservas DHCPv4 de las estaciones de administración (`dhcp_reservas`) |
 | `playbooks/dhcp.yml` | Kea DHCPv4, Kea DHCPv6 sin estado y radvd en kit01 (roles `kea_dhcp4`, `kea_dhcp6` y `radvd` del repositorio `network`) |
 | `playbooks/prueba01.yml` | Enciende (`prueba01_estado=encendida`, por defecto) o apaga `prueba01` |
