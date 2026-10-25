@@ -36,6 +36,9 @@ samba_dns_origenes:
   - "{{ redes.servidores.gw6 }}"
   - "{{ servicios_kit01.ipv6 }}"
 
+# Los recursos SMB se usan desde la Interna (F-05)
+samba_smb_origenes: ["{{ redes.interna.ipv4 }}", "{{ redes.interna.ipv6 }}"]
+
 # auth_audit nivel 3 registra los intentos fallidos y los exitosos
 samba_log_auth: /var/log/samba/auth.log
 

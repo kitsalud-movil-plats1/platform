@@ -1,6 +1,6 @@
 ---
 # BIND9 en kit01 consulta la subzona delegada (F-25). El resto de puertos del
-# DC se abre en la tarea que los usa (445 en platform#9, 636 en observability#2).
+# DC se abre en la tarea que los usa (636 en observability#2).
 - name: DNS del dominio desde kit01
   community.general.ufw:
     rule: allow
@@ -9,3 +9,14 @@
     from_ip: "{{ item.0 }}"
     comment: samba-ad dns desde kit01
   loop: "{{ samba_dns_origenes | product(['udp', 'tcp']) | list }}"
+
+# Recursos SMB solo desde la Interna (F-05). La Comunidad ya la corta nftables
+# en kit01; aquí queda una segunda barrera.
+- name: SMB desde la Interna
+  community.general.ufw:
+    rule: allow
+    proto: tcp
+    port: "445"
+    from_ip: "{{ item }}"
+    comment: smb desde la interna
+  loop: "{{ samba_smb_origenes }}"
