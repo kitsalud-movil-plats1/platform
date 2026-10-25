@@ -91,6 +91,25 @@
     label: "{{ nombre }}"
   notify: Renovar los certificados de Caddy
 
+# La VM que publica la raíz (ca.salud.movil) la deja junto a la página
+- name: Carpeta pública de Caddy
+  ansible.builtin.file:
+    path: "{{ caddy_dir }}/publica"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: ca_publicar | default(false)
+
+- name: Raíz publicada para descargar
+  ansible.builtin.copy:
+    content: "{{ (ca_certs.results | selectattr('item', 'search', 'raiz.crt$') | first).content | b64decode }}"
+    dest: "{{ caddy_dir }}/publica/raiz.crt"
+    owner: root
+    group: root
+    mode: "0644"
+  when: ca_publicar | default(false)
+
 # Caddy creó su propia CA antes de apps#3; ya no se usa
 - name: Quitar la CA que Caddy generó sola
   ansible.builtin.file:

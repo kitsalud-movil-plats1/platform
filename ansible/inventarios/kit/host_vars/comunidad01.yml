@@ -10,3 +10,5 @@ caddy_puertos: ["80"]
 
 # Nombres que puede firmar el intermedio de la CA del kit en comunidad01 (apps#3)
 ca_nombres: [registro]
+# Publica la raíz en http://ca.salud.movil (Caddyfile de comunidad01)
+ca_publicar: true
