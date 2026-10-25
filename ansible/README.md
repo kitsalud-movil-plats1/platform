@@ -17,7 +17,7 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `playbooks/vms.yml` | Crea las VMs que falten en kit01 (rol `kit01_vms`) y les aplica el rol `comun` |
 | `playbooks/clinica01.yml` | Aplicaciones de clinica01 con los roles `docker`, `dhis2` y `caddy` del repositorio `apps` (`-e dhis2_estado=stopped` para detener DHIS2) |
 | `inventarios/kit/group_vars/all/dhis2.yml` | Cuentas locales de DHIS2 y su rol (las claves en el vault) |
-| `inventarios/kit/host_vars/clinica01.yml`, `host_vars/comunidad01.yml` | Puertos y orígenes de Caddy en ufw de cada VM |
+| `inventarios/kit/host_vars/clinica01.yml`, `host_vars/comunidad01.yml` | Puertos y orígenes de Caddy en ufw y nombres que puede firmar el intermedio de la CA de cada VM |
 | `playbooks/comunidad01.yml` | Aplicaciones de comunidad01 con los roles `docker`, `kiwix` y `caddy` del repositorio `apps` |
 | `inventarios/kit/group_vars/all/contenido.yml` | ZIM de la biblioteca (archivo, carpeta de origen, título y sha256) |
 | `inventarios/kit/group_vars/all/dhcp.yml` | Reservas DHCPv4 de las estaciones de administración (`dhcp_reservas`) |
@@ -33,6 +33,7 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `roles/chrony/` | Servidor NTP del kit (ver `kit01/chrony/README.md`) |
 | `inventarios/kit/group_vars/all/samba.yml` | Dominio de Samba AD (realm, grupos, usuarios de prueba y política de contraseñas) |
 | `playbooks/samba.yml` | Samba AD DC en clinica01 (rol `samba_ad`) |
+| `playbooks/ca.yml` | Raíz de la CA del kit y certificado de `monitoreo` en kit01 (rol `ca_interna`). Los intermedios los firma el mismo rol en `clinica01.yml` y `comunidad01.yml` |
 | `roles/samba_ad/` | Controlador de dominio `ad.salud.movil` (ver `clinica01/samba/README.md`) |
 | `roles/kit01_vms/` | LV `vms`, imagen base y VMs con cloud-init (ver `kit01/libvirt/README.md`) |
 
