@@ -17,7 +17,7 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `playbooks/vms.yml` | Crea las VMs que falten en kit01 (rol `kit01_vms`) y les aplica el rol `comun` |
 | `playbooks/clinica01.yml` | Aplicaciones de clinica01 con los roles `docker`, `dhis2` y `caddy` del repositorio `apps` (`-e dhis2_estado=stopped` para detener DHIS2) |
 | `inventarios/kit/group_vars/all/dhis2.yml` | Cuentas locales de DHIS2 y su rol, y la clave del usuario `formularios` de la base de prerregistro (los valores en el vault) |
-| `inventarios/kit/host_vars/clinica01.yml`, `host_vars/comunidad01.yml` | Puertos y orígenes de Caddy en ufw y nombres que puede firmar el intermedio de la CA de cada VM |
+| `inventarios/kit/host_vars/clinica01.yml`, `host_vars/comunidad01.yml` | Puertos y orígenes de Caddy en ufw, nombres que puede firmar el intermedio de la CA de cada VM y certificados de servicios sin Caddy (`ca_hojas_vm`, el LDAPS de Samba en clinica01) |
 | `playbooks/comunidad01.yml` | Aplicaciones de comunidad01 con los roles `docker`, `kiwix`, `ca_interna`, `formularios` y `caddy` |
 | `inventarios/kit/group_vars/all/contenido.yml` | ZIM de la biblioteca (archivo, carpeta de origen, título y sha256) |
 | `inventarios/kit/group_vars/all/dhcp.yml` | Reservas DHCPv4 de las estaciones de administración (`dhcp_reservas`) |
@@ -28,14 +28,14 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `inventarios/kit/group_vars/all/dns.yml` | Nombres y PTR de las zonas DNS del kit |
 | `playbooks/dns.yml` | BIND9 en kit01 (rol `bind9`) |
 | `roles/bind9/` | BIND9 autoritativo y recursivo (ver `kit01/bind9/README.md`) |
-| `inventarios/kit/group_vars/all/paquetes.yml` | Versiones fijas que usan varios roles (`chrony`, Kea, `radvd`, Samba, Kerberos, Prometheus, node_exporter y blackbox) |
+| `inventarios/kit/group_vars/all/paquetes.yml` | Versiones fijas que usan varios roles (`chrony`, Kea, `radvd`, Samba, Kerberos, Prometheus, node_exporter, blackbox, nginx y Grafana) |
 | `playbooks/ntp.yml` | Chrony en kit01 (rol `chrony`) |
 | `roles/chrony/` | Servidor NTP del kit (ver `kit01/chrony/README.md`) |
 | `inventarios/kit/group_vars/all/samba.yml` | Dominio de Samba AD (realm, grupos, usuarios de prueba y política de contraseñas) |
 | `playbooks/samba.yml` | Samba AD DC en clinica01 (rol `samba_ad`) |
-| `playbooks/ca.yml` | Raíz de la CA del kit y certificado de `monitoreo` en kit01 (rol `ca_interna`). Los intermedios los firma el mismo rol en `clinica01.yml` y `comunidad01.yml` |
+| `playbooks/ca.yml` | Raíz de la CA del kit y certificado de `monitoreo` en kit01 (rol `ca_interna`). Los intermedios y los certificados de `ca_hojas_vm` los firma el mismo rol en `clinica01.yml` y `comunidad01.yml` |
 | `inventarios/kit/group_vars/all/monitoreo.yml` | Direcciones de Prometheus y blackbox, node_exporter de las VMs, orígenes de kit01 para ufw (F-14) y listas de sondas DNS, web, TCP y ping. Los puertos que abre cada VM para las sondas van en `monitoreo_puertos` de su `host_vars` |
-| `playbooks/monitoreo.yml` | node_exporter en kit01 y en las VMs, y blackbox y Prometheus en kit01 (roles del repositorio `observability`). Necesita la CA del kit (`ca.yml`) |
+| `playbooks/monitoreo.yml` | node_exporter en kit01 y en las VMs, y blackbox, Prometheus, nginx (rol `nginx`) y Grafana en kit01 (roles del repositorio `observability`). Necesita la CA del kit (`ca.yml`) y el certificado LDAPS de Samba (`clinica01.yml` y `samba.yml`) |
 | `roles/samba_ad/` | Controlador de dominio `ad.salud.movil` (ver `clinica01/samba/README.md`) |
 | `roles/kit01_vms/` | LV `vms`, imagen base y VMs con cloud-init (ver `kit01/libvirt/README.md`) |
 

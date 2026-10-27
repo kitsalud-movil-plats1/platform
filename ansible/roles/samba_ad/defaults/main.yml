@@ -36,11 +36,19 @@ samba_dns_origenes:
   - "{{ redes.servidores.gw6 }}"
   - "{{ servicios_kit01.ipv6 }}"
 
+# Grafana en kit01 inicia sesión por LDAPS (F-13)
+samba_ldaps_origenes: "{{ samba_dns_origenes }}"
+
 # Nombre de servicio de los recursos SMB (sección 9)
 samba_spn: ["cifs/archivos.{{ dominio }}"]
 
 # Los recursos SMB se usan desde la Interna (F-05)
 samba_smb_origenes: ["{{ redes.interna.ipv4 }}", "{{ redes.interna.ipv6 }}"]
+
+# Certificado LDAPS de la CA del kit, que firma el intermedio de clinica01
+# (ca_hojas_vm en host_vars, playbooks/clinica01.yml)
+samba_tls_dir: /etc/kitsalud/tls
+samba_tls_nombre: "{{ samba_dc_fqdn | regex_replace('\\.' ~ dominio ~ '$', '') }}"
 
 # auth_audit nivel 3 registra los intentos fallidos y los exitosos
 samba_log_auth: /var/log/samba/auth.log

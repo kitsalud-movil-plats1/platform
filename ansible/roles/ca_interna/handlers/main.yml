@@ -11,3 +11,12 @@
   ansible.builtin.command: docker compose restart caddy
   args:
     chdir: "{{ caddy_dir }}"
+
+# Servicios de la VM que leen su certificado al arrancar (hojas_vm.yml)
+- name: Reiniciar los servicios con certificados del kit
+  ansible.builtin.systemd_service:
+    name: "{{ item.servicio }}"
+    state: restarted
+  loop: "{{ ca_hojas_vm }}"
+  loop_control:
+    label: "{{ item.servicio }}"

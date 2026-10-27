@@ -1,3 +1,7 @@
 ---
 - name: Intermedio de la VM firmado por la raíz del kit
   ansible.builtin.import_tasks: intermedio.yml
+
+- name: Certificados de los servicios de la VM sin Caddy
+  ansible.builtin.import_tasks: hojas_vm.yml
+  when: ca_hojas_vm | length > 0

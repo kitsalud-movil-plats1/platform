@@ -1,6 +1,6 @@
 ---
-# BIND9 en kit01 consulta la subzona delegada (F-25). El resto de puertos del
-# DC se abre en la tarea que los usa (636 en observability#2).
+# BIND9 en kit01 consulta la subzona delegada (F-25) y Grafana inicia sesión
+# por LDAPS (F-13). El resto de puertos del DC se abre en la tarea que los usa.
 - name: DNS del dominio desde kit01
   community.general.ufw:
     rule: allow
@@ -20,3 +20,13 @@
     from_ip: "{{ item }}"
     comment: smb desde la interna
   loop: "{{ samba_smb_origenes }}"
+
+# Login de Grafana en kit01 contra AD (F-13)
+- name: LDAPS desde kit01
+  community.general.ufw:
+    rule: allow
+    proto: tcp
+    port: "636"
+    from_ip: "{{ item }}"
+    comment: samba-ad ldaps desde kit01
+  loop: "{{ samba_ldaps_origenes }}"

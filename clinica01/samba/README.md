@@ -8,11 +8,12 @@ Identidad centralizada del kit (R10, D-05) y almacenamiento compartido (R9). El 
 | Dominio | Realm `AD.SALUD.MOVIL`, dominio NetBIOS `SALUD`, DC `DC01` (`dc01.ad.salud.movil`). El hostname de la VM sigue siendo `clinica01` |
 | DNS | DNS interno de Samba (`SAMBA_INTERNAL`) para `ad.salud.movil`. Lo demás lo reenvía a BIND9 en kit01 (`10.20.20.10` y `::10`). clinica01 resuelve por BIND9, que delega la subzona `ad` a este DC |
 | Escucha | Solo `lo`, `10.20.20.11` y `fd5a:fc7e:d716:20::11` (`bind interfaces only`). El 53 de systemd-resolved (`127.0.0.53` y `127.0.0.54`) no se toca |
-| Firewall (ufw) | `53/udp` y `53/tcp` solo desde kit01 (`10.20.20.1`, `.10`, `::1` y `::10`), para la delegación (F-25). `445/tcp` solo desde la Interna (`10.20.10.0/24` y `fd5a:fc7e:d716:10::/64`, F-05). El 636 lo abre observability#2 |
+| Firewall (ufw) | `53/udp` y `53/tcp` solo desde kit01 (`10.20.20.1`, `.10`, `::1` y `::10`), para la delegación (F-25). `445/tcp` solo desde la Interna (`10.20.10.0/24` y `fd5a:fc7e:d716:10::/64`, F-05). `636/tcp` solo desde kit01, para el login LDAPS de Grafana (F-13) |
 | Grupos | `clinicos` (gid 10001) y `admins` (gid 10002) |
 | Usuarios de prueba | `ana.rojas` (uid 10101) y `carlos.perez` (10102) en `clinicos`, `laura.gomez` (10103) en `admins` |
 | IDs POSIX | Fijos con los atributos RFC2307 (`gidNumber` y `uidNumber`), que el DC usa por `idmap_ldb:use rfc2307`. Así los dueños de los archivos son los mismos si el dominio se reconstruye y se restaura un backup (P11) |
 | Recursos SMB | `\\archivos.salud.movil\archivos` en `/srv/samba/archivos`, solo para `clinicos`, con cifrado obligatorio. `\\archivos.salud.movil\contenido` en `/srv/samba/contenido` (`zim/`, `salud/` y `comunidad/`), con escritura para `clinicos` y `admins` y cifrado deseado |
+| LDAPS | En el 636, con un certificado de `dc01.ad.salud.movil` que firma el intermedio de clinica01 de la CA del kit (rol `ca_interna`, `ca_hojas_vm` en `host_vars/clinica01.yml`). La llave se genera en la VM. `smb.conf` apunta a `/etc/kitsalud/tls/dc01.ad.key`, a `dc01.ad.crt` (hoja e intermedio) y a `raiz.crt`. Se renueva con Ansible 30 días antes de vencer y Samba se reinicia solo. El certificado que Samba genera solo no trae subjectAltName y los clientes en Go, como Grafana, no lo aceptan |
 | Protocolo | SMB3 como mínimo en todo el DC (`server min protocol = SMB3`), así que SMB1 y SMB2 se rechazan |
 | Kerberos | SPN `cifs/archivos.salud.movil` en la cuenta `DC01$`. Un usuario con ticket entra sin contraseña; los equipos fuera del dominio usan NTLMv2 |
 | Política de contraseñas | Sin complejidad, longitud mínima 8, historial de 5, sin vencimiento y bloqueo de 15 minutos después de 5 intentos fallidos. Las contraseñas son las académicas del grupo (R-14) |
@@ -24,9 +25,12 @@ Identidad centralizada del kit (R10, D-05) y almacenamiento compartido (R9). El 
 Desde `platform/ansible/`:
 
 ```bash
-ansible-playbook playbooks/samba.yml    # Samba AD DC en clinica01
-ansible-playbook playbooks/dns.yml      # delegación de ad.salud.movil en BIND9
+ansible-playbook playbooks/clinica01.yml   # antes, el certificado LDAPS de dc01.ad (rol ca_interna)
+ansible-playbook playbooks/samba.yml       # Samba AD DC en clinica01
+ansible-playbook playbooks/dns.yml         # delegación de ad.salud.movil en BIND9
 ```
+
+El rol se detiene con un aviso si todavía no existe `/etc/kitsalud/tls/dc01.ad.crt`.
 
 - **Instalación.** Los paquetes se instalan con un `policy-rc.d` temporal que impide arrancar `smbd`, `nmbd` y `winbind`, así que nunca corren con la configuración de fábrica.
 - **Aprovisionamiento.** Solo si no existe `/var/lib/samba/private/sam.ldb`. Antes se guarda el `smb.conf` de fábrica como `smb.conf.ubuntu`. Después el rol escribe su propio `smb.conf` (validado con `testparm`) y `krb5.conf`.

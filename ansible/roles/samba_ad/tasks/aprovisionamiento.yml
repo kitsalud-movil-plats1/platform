@@ -35,6 +35,16 @@
     creates: /var/lib/samba/private/sam.ldb
   no_log: true
 
+- name: Certificado LDAPS presente
+  ansible.builtin.stat:
+    path: "{{ samba_tls_dir }}/{{ samba_tls_nombre }}.crt"
+  register: samba_tls_stat
+
+- name: Falta el certificado LDAPS
+  ansible.builtin.assert:
+    that: samba_tls_stat.stat.exists
+    fail_msg: "Primero ansible-playbook playbooks/clinica01.yml (certificado {{ samba_tls_nombre }} de la CA del kit)"
+
 - name: smb.conf del DC
   ansible.builtin.template:
     src: smb.conf.j2

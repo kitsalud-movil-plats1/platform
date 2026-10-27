@@ -1,15 +1,18 @@
 ---
-# Monitoreo del kit (observability#1, D-09): node_exporter en kit01 y en las
-# VMs (con ufw para kit01) y Prometheus con las sondas blackbox en kit01
+# Monitoreo del kit (observability#1 y #2, D-09): node_exporter en kit01 y en
+# las VMs (con ufw para kit01), Prometheus con las sondas blackbox en kit01 y
+# Grafana detrás de nginx (https://monitoreo.salud.movil)
 - name: node_exporter en kit01 y en las VMs
   hosts: kit:vms
   become: true
   roles:
     - node_exporter
 
-- name: Prometheus y las sondas blackbox en kit01
+- name: Prometheus, las sondas blackbox y Grafana en kit01
   hosts: kit
   become: true
   roles:
     - blackbox_exporter
     - prometheus
+    - nginx
+    - grafana

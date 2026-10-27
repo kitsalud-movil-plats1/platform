@@ -16,4 +16,9 @@ ca_tls_dir: /etc/kitsalud/tls
 # En cada VM: carpeta que monta Caddy en /pki y nombres que puede firmar su
 # intermedio (ca_nombres, en host_vars de cada VM)
 ca_pki_vm: /srv/caddy/pki
+
+# Servicios de la VM sin Caddy que usan un certificado firmado por su
+# intermedio, en ca_tls_dir (host_vars de cada VM). Cada uno con nombre (tiene
+# que estar en ca_nombres) y el servicio que se reinicia si el certificado cambia.
+ca_hojas_vm: []
 caddy_dir: /srv/caddy

@@ -1,0 +1,12 @@
+---
+# Se valida toda la configuración antes de recargar; si falla, nginx sigue con
+# la anterior
+- name: Recargar nginx
+  ansible.builtin.command: nginx -t
+  changed_when: true
+  notify: Recargar el servicio nginx
+
+- name: Recargar el servicio nginx
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: reloaded
