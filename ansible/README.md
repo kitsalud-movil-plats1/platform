@@ -28,12 +28,14 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `inventarios/kit/group_vars/all/dns.yml` | Nombres y PTR de las zonas DNS del kit |
 | `playbooks/dns.yml` | BIND9 en kit01 (rol `bind9`) |
 | `roles/bind9/` | BIND9 autoritativo y recursivo (ver `kit01/bind9/README.md`) |
-| `inventarios/kit/group_vars/all/paquetes.yml` | Versiones fijas que usan varios roles (`chrony`, Kea, `radvd`, Samba y Kerberos) |
+| `inventarios/kit/group_vars/all/paquetes.yml` | Versiones fijas que usan varios roles (`chrony`, Kea, `radvd`, Samba, Kerberos, Prometheus, node_exporter y blackbox) |
 | `playbooks/ntp.yml` | Chrony en kit01 (rol `chrony`) |
 | `roles/chrony/` | Servidor NTP del kit (ver `kit01/chrony/README.md`) |
 | `inventarios/kit/group_vars/all/samba.yml` | Dominio de Samba AD (realm, grupos, usuarios de prueba y política de contraseñas) |
 | `playbooks/samba.yml` | Samba AD DC en clinica01 (rol `samba_ad`) |
 | `playbooks/ca.yml` | Raíz de la CA del kit y certificado de `monitoreo` en kit01 (rol `ca_interna`). Los intermedios los firma el mismo rol en `clinica01.yml` y `comunidad01.yml` |
+| `inventarios/kit/group_vars/all/monitoreo.yml` | Direcciones de Prometheus y blackbox, node_exporter de las VMs, orígenes de kit01 para ufw (F-14) y listas de sondas DNS, web, TCP y ping. Los puertos que abre cada VM para las sondas van en `monitoreo_puertos` de su `host_vars` |
+| `playbooks/monitoreo.yml` | node_exporter en kit01 y en las VMs, y blackbox y Prometheus en kit01 (roles del repositorio `observability`). Necesita la CA del kit (`ca.yml`) |
 | `roles/samba_ad/` | Controlador de dominio `ad.salud.movil` (ver `clinica01/samba/README.md`) |
 | `roles/kit01_vms/` | LV `vms`, imagen base y VMs con cloud-init (ver `kit01/libvirt/README.md`) |
 
