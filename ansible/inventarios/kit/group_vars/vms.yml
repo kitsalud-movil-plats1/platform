@@ -16,3 +16,6 @@ ansible_ssh_common_args: >-
 
 # Cliente NTP del kit (platform#6)
 comun_chrony_cliente: true
+
+# Reenvío de rsyslog a kit01 (F-15, observability#3)
+comun_rsyslog_reenvio: true
