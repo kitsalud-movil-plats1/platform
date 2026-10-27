@@ -19,6 +19,12 @@
 	# SMB3 como mínimo; SMB1 y SMB2 quedan rechazados (R9)
 	server min protocol = SMB3
 
+	# LDAPS con el certificado de la CA del kit (rol ca_interna, observability#2)
+	tls enabled = yes
+	tls keyfile = {{ samba_tls_dir }}/{{ samba_tls_nombre }}.key
+	tls certfile = {{ samba_tls_dir }}/{{ samba_tls_nombre }}.crt
+	tls cafile = {{ samba_tls_dir }}/raiz.crt
+
 [sysvol]
 	path = /var/lib/samba/sysvol
 	read only = No

@@ -1,0 +1,93 @@
+---
+# Certificados de los servicios de la VM que no pasan por Caddy (por ejemplo
+# dc01.ad.salud.movil para LDAPS, observability#2). La llave se genera en la VM
+# y el intermedio de la VM firma la hoja, así que el nombre tiene que estar en
+# ca_nombres. El .crt lleva la hoja y el intermedio, para que el cliente solo
+# necesite la raíz.
+- name: Carpeta de los certificados de la VM
+  ansible.builtin.file:
+    path: "{{ ca_tls_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Llaves de los servicios de la VM
+  community.crypto.openssl_privatekey:
+    path: "{{ ca_tls_dir }}/{{ item.nombre }}.key"
+    type: ECC
+    curve: secp256r1
+    owner: root
+    group: root
+    mode: "0600"
+  loop: "{{ ca_hojas_vm }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+
+- name: CSR de los servicios de la VM
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: "{{ ca_tls_dir }}/{{ item.nombre }}.key"
+    common_name: "{{ item.nombre }}.{{ dominio }}"
+    subject_alt_name: ["DNS:{{ item.nombre }}.{{ dominio }}"]
+    basic_constraints: ["CA:FALSE"]
+    key_usage: [digitalSignature]
+    extended_key_usage: [serverAuth]
+  loop: "{{ ca_hojas_vm }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+  register: ca_hojas_vm_csr
+  changed_when: false
+
+- name: Vigencia de los certificados de la VM
+  community.crypto.x509_certificate_info:
+    path: "{{ ca_tls_dir }}/{{ item.nombre }}.hoja.crt"
+    valid_at:
+      renovar: "{{ ca_hoja_renovar }}"
+  loop: "{{ ca_hojas_vm }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+  register: ca_hojas_vm_info
+  failed_when: false
+
+- name: Firmar los certificados de la VM con su intermedio
+  community.crypto.x509_certificate:
+    path: "{{ ca_tls_dir }}/{{ item.0.nombre }}.hoja.crt"
+    csr_content: "{{ item.1.csr }}"
+    provider: ownca
+    ownca_path: "{{ ca_pki_vm }}/intermedio.crt"
+    ownca_privatekey_path: "{{ ca_pki_vm }}/intermedio.key"
+    ownca_not_after: "+{{ ca_hoja_dias }}d"
+    force: "{{ not (item.2.valid_at.renovar | default(false)) }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ ca_hojas_vm | zip(ca_hojas_vm_csr.results, ca_hojas_vm_info.results) | list }}"
+  loop_control:
+    label: "{{ item.0.nombre }}"
+
+- name: Hojas, intermedio y raíz en la VM
+  ansible.builtin.slurp:
+    src: "{{ item }}"
+  loop: "{{ ca_hojas_vm | map(attribute='nombre') | map('regex_replace', '^(.*)$', ca_tls_dir ~ '/\\1.hoja.crt') | list + [ca_pki_vm ~ '/intermedio.crt', ca_pki_vm ~ '/raiz.crt'] }}"
+  register: ca_hojas_vm_pem
+
+- name: Cadena de cada servicio (hoja e intermedio)
+  ansible.builtin.copy:
+    content: "{{ (ca_hojas_vm_pem.results[idx].content | b64decode) ~ (ca_hojas_vm_pem.results[-2].content | b64decode) }}"
+    dest: "{{ ca_tls_dir }}/{{ item.nombre }}.crt"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ ca_hojas_vm }}"
+  loop_control:
+    index_var: idx
+    label: "{{ item.nombre }}"
+  notify: Reiniciar los servicios con certificados del kit
+
+- name: Raíz del kit junto a los certificados
+  ansible.builtin.copy:
+    content: "{{ ca_hojas_vm_pem.results[-1].content | b64decode }}"
+    dest: "{{ ca_tls_dir }}/raiz.crt"
+    owner: root
+    group: root
+    mode: "0644"
