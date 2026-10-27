@@ -1,0 +1,64 @@
+---
+# nginx de kit01 (sección 10.1). Lo usan monitoreo (rol grafana) y, más
+# adelante, el portal cautivo (network#8). Cada uno deja su sitio en
+# sites-enabled y avisa a "Recargar nginx".
+- name: Paquetes instalados
+  ansible.builtin.package_facts:
+
+# Con la configuración de fábrica escucharía en el 80 de todas las direcciones
+- name: Impedir que el paquete arranque nginx al instalarse
+  ansible.builtin.copy:
+    dest: /usr/sbin/policy-rc.d
+    content: "#!/bin/sh\nexit 101\n"
+    mode: "0755"
+    force: false
+  register: nginx_policy
+  when: "'nginx' not in ansible_facts.packages"
+
+- name: nginx con versión fija
+  when: >-
+    'nginx' not in ansible_facts.packages or
+    ansible_facts.packages['nginx'][0].version != version_nginx
+  block:
+    - name: Paquetes de nginx
+      ansible.builtin.apt:
+        name:
+          - "nginx={{ version_nginx }}"
+          - "nginx-common={{ version_nginx }}"
+        state: present
+        install_recommends: false
+        update_cache: true
+        cache_valid_time: 3600
+  always:
+    - name: Quitar el bloqueo de arranque
+      ansible.builtin.file:
+        path: /usr/sbin/policy-rc.d
+        state: absent
+      when: nginx_policy is changed
+
+- name: Retener nginx
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop: [nginx, nginx-common]
+
+- name: Sin el sitio de fábrica
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Recargar nginx
+
+- name: Ajustes comunes del kit
+  ansible.builtin.template:
+    src: kitsalud.conf.j2
+    dest: /etc/nginx/conf.d/kitsalud.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar nginx
+
+- name: nginx activo al arrancar
+  ansible.builtin.systemd_service:
+    name: nginx
+    enabled: true
+    state: started
