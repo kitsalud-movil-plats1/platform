@@ -6,3 +6,5 @@ iface_lan: enp171s0
 comun_admin_grupos_extra: [libvirt, kvm]
 # En kit01 filtra nftables (network#4); ufw no se toca
 comun_ufw: false
+# node_exporter de kit01 solo en localhost (observability#1)
+node_exporter_escucha: 127.0.0.1:9100

@@ -12,3 +12,6 @@ caddy_puertos: ["80", "443"]
 ca_nombres: [registro]
 # Publica la raíz en http://ca.salud.movil (Caddyfile de comunidad01)
 ca_publicar: true
+
+# Sondas blackbox desde kit01 hacia la biblioteca, la CA y el registro (F-14)
+monitoreo_puertos: ["80", "443"]

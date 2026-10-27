@@ -5,3 +5,7 @@ caddy_puertos: ["443"]
 
 # Nombres que puede firmar el intermedio de la CA del kit en clinica01 (apps#3)
 ca_nombres: [pacientes, consultas, archivos]
+
+# Sondas blackbox desde kit01 hacia DHIS2 y SMB (F-14). El 5432 lo publica
+# Docker sin pasar por ufw y lo filtra pg_hba.conf.
+monitoreo_puertos: ["443", "445"]

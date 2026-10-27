@@ -5,3 +5,7 @@ comun_ufw_ssh_origenes:
   - "{{ redes.interna.gw4 }}"
   - "{{ gw_link_local }}"
   - fe80::5054:ff:fe4b:102
+# kitlab-kit01 llega al cliente desde la Interna (observability#1)
+monitoreo_origenes:
+  - "{{ redes.interna.gw4 }}"
+  - "{{ redes.interna.gw6 }}"
