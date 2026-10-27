@@ -11,7 +11,7 @@ DNS autoritativo y recursivo del kit (R2, sección 9 del documento). Lo instala 
 | Reenviadores | `1.1.1.1` y `9.9.9.9` con `forward first`; si no responden, resuelve desde la raíz. `dnssec-validation auto`, salvo `salud.movil` (`validate-except`), que no cuelga de un TLD real |
 | Delegación | `ad.salud.movil` se delega al DNS interno de Samba AD en clinica01 (`dc01.ad`, platform#8). La zona `salud.movil` tiene `forwarders { };`, así que las consultas de la subzona van a clinica01 y nunca a los reenviadores |
 | Sin Internet | Las tres zonas son autoritativas y responden igual; lo externo devuelve `SERVFAIL` |
-| Logs | Consultas en `/var/log/named/consultas.log` y el resto en `/var/log/named/named.log`, con rotación por tamaño |
+| Logs | Consultas en `/var/log/named/consultas.log` y el resto en `/var/log/named/named.log`, con rotación por tamaño. Los eventos generales también van a syslog (canal `default_syslog`) y quedan en `/var/log/kitsalud/kit01/dns.log` (observability#3) |
 
 ## Nombres
 
