@@ -27,7 +27,8 @@ monitoreo_dns_consultas:
   - { nombre: "pacientes.{{ dominio }}", tipo: AAAA, respuesta: "{{ equipos.clinica01.ipv6 }}" }
   # Comprueba la delegación de ad.salud.movil a Samba AD
   - { nombre: "dc01.ad.{{ dominio }}", tipo: A, respuesta: "{{ equipos.clinica01.ipv4 }}" }
-# equipo es una entrada de equipos (red.yml); se sondea cada familia que tenga
+# equipo es una entrada de equipos (red.yml); se sondea cada familia que tenga.
+# Con ipv4 e ipv6 se sondean esas direcciones (kit01 no está en equipos).
 monitoreo_web:
   - { nombre: pacientes, esquema: https, ruta: /api/ping, equipo: clinica01 }
   - { nombre: registro, esquema: https, ruta: /, equipo: comunidad01 }
@@ -36,4 +37,9 @@ monitoreo_web:
 monitoreo_tcp:
   - { nombre: smb, puerto: 445, equipo: clinica01 }
   - { nombre: postgresql, puerto: 5432, equipo: clinica01 }
+  # Login de Grafana contra AD (F-13) y SSH de administración (F-01, F-02)
+  - { nombre: ldaps, puerto: 636, equipo: clinica01 }
+  - { nombre: ssh, puerto: 22, equipo: kit01, ipv4: "{{ servicios_kit01.ipv4 }}", ipv6: "{{ servicios_kit01.ipv6 }}" }
+  - { nombre: ssh, puerto: 22, equipo: clinica01 }
+  - { nombre: ssh, puerto: 22, equipo: comunidad01 }
 monitoreo_icmp: [sw01, ap01, clinica01, comunidad01]
