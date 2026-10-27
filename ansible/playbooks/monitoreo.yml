@@ -6,3 +6,9 @@
   become: true
   roles:
     - node_exporter
+
+- name: Sondas blackbox en kit01
+  hosts: kit
+  become: true
+  roles:
+    - blackbox_exporter
