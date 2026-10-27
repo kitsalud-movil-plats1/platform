@@ -1,6 +1,8 @@
 ---
 # Monitoreo en kit01 (D-09, observability#1). Prometheus, blackbox y el
 # node_exporter de kit01 escuchan solo en localhost.
+monitoreo_prometheus: 127.0.0.1:9090
+monitoreo_blackbox: 127.0.0.1:9115
 
 # node_exporter de las VMs. Se lee por IPv4 para no duplicar las series; el
 # IPv6 de cada VM lo cubren las sondas.
