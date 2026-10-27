@@ -12,3 +12,8 @@ ca_hojas_vm:
 # Sondas blackbox desde kit01 hacia DHIS2 y SMB (F-14). El 5432 lo publica
 # Docker sin pasar por ufw y lo filtra pg_hba.conf.
 monitoreo_puertos: ["443", "445"]
+
+# Autenticación de Samba hacia el log central (observability#3). La ruta es
+# samba_log_auth del rol samba_ad.
+comun_rsyslog_archivos:
+  - { ruta: /var/log/samba/auth.log, etiqueta: samba-auth, facilidad: authpriv }

@@ -2,3 +2,5 @@
 # En el laboratorio la única "VM" es kitlab-cliente, en la Interna
 monitoreo_nodos:
   - { nombre: kitlab-cliente, ipv4: 10.20.10.10 }
+registros_equipos:
+  - { nombre: kitlab-cliente, ipv4: 10.20.10.10, ipv6: "fd5a:fc7e:d716:10:5054:ff:fe4b:201" }

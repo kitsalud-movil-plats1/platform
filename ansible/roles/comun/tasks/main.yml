@@ -105,6 +105,26 @@
         state: absent
       notify: Reiniciar chrony
 
+# imfile abre los directorios padres del archivo, y el perfil de AppArmor de
+# rsyslogd solo permite lo que hay dentro de /var/log/
+- name: AppArmor deja a imfile abrir /, /var/ y /var/log/
+  when: comun_rsyslog_reenvio | bool
+  ansible.builtin.blockinfile:
+    path: /etc/apparmor.d/local/usr.sbin.rsyslogd
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+    marker: "# {mark} rol comun, imfile (R12)"
+    block: |
+      / r,
+      /var/ r,
+      /var/log/ r,
+    state: "{{ 'present' if comun_rsyslog_archivos else 'absent' }}"
+  notify:
+    - Recargar el perfil de rsyslogd
+    - Reiniciar rsyslog
+
 - name: Reenvío de rsyslog hacia kit01
   when: comun_rsyslog_reenvio | bool
   ansible.builtin.template:
@@ -113,4 +133,9 @@
     owner: root
     group: root
     mode: "0644"
+    # AppArmor solo deja leer a rsyslogd sus rutas; la copia no termina en .conf
+    # y lleva el directorio de trabajo que fija rsyslog.conf (imfile lo necesita)
+    validate: >-
+      sh -c '{ echo "global(workDirectory=\"/var/spool/rsyslog\")"; cat %s; } > /etc/rsyslog.d/.validar-reenvio &&
+      rsyslogd -N1 -f /etc/rsyslog.d/.validar-reenvio; r=$?; rm -f /etc/rsyslog.d/.validar-reenvio; exit $r'
   notify: Reiniciar rsyslog

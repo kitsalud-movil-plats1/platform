@@ -1,0 +1,11 @@
+---
+# Logs centralizados en kit01 (D-09, R12, observability#3). rsyslog escucha en
+# la IP de servicios, en las dos familias.
+registros_escucha: ["{{ servicios_kit01.ipv4 }}", "{{ servicios_kit01.ipv6 }}"]
+
+# Equipos que envían syslog: las VMs por TCP (F-15) y sw01 por UDP (F-16). El
+# AP no envía syslog. Cada uno tiene su carpeta y se reconoce por la IP de origen.
+registros_equipos:
+  - { nombre: clinica01, ipv4: "{{ equipos.clinica01.ipv4 }}", ipv6: "{{ equipos.clinica01.ipv6 }}" }
+  - { nombre: comunidad01, ipv4: "{{ equipos.comunidad01.ipv4 }}", ipv6: "{{ equipos.comunidad01.ipv6 }}" }
+  - { nombre: sw01, ipv4: "{{ equipos.sw01.ipv4 }}", ipv6: "{{ equipos.sw01.ipv6 }}" }

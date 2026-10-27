@@ -36,6 +36,7 @@ logging {
 		severity info;
 	};
 	category queries { consultas; };
-	category default { general; };
+	// También a syslog, para el log central de kit01 (observability#3)
+	category default { general; default_syslog; };
 	category lame-servers { null; };
 };

@@ -13,7 +13,7 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `inventarios/kit/group_vars/all/maquinas.yml` | Definición de las VMs (vCPU, RAM, discos, MAC, IP, autostart). Campos opcionales: `red`, `direccion` (`fija` o `dhcp`), `disco_datos`, `ssh_espera` y `ssh_claves` |
 | `inventarios/kit/group_vars/all/vault.yml` | Secretos cifrados con `ansible-vault`. Sus claves están en [`vault.example.yml`](vault.example.yml) |
 | `inventarios/*/host_vars/kit01.yml` | Nombres de interfaz de cada rol (`iface_wan`, `iface_lan`, D-14, R-08) y ajustes propios de kit01 |
-| `playbooks/comun.yml` | Aplica el rol `comun` a todos los hosts |
+| `playbooks/comun.yml` | Aplica el rol `comun` a todos los hosts. Con `prueba01` encendida se corre con `-l '!pruebas'`, porque esa VM no lleva el rol |
 | `playbooks/vms.yml` | Crea las VMs que falten en kit01 (rol `kit01_vms`) y les aplica el rol `comun` |
 | `playbooks/clinica01.yml` | Aplicaciones de clinica01 con los roles `docker`, `dhis2` y `caddy` del repositorio `apps` (`-e dhis2_estado=stopped` para detener DHIS2) |
 | `inventarios/kit/group_vars/all/dhis2.yml` | Cuentas locales de DHIS2 y su rol, y la clave del usuario `formularios` de la base de prerregistro (los valores en el vault) |
@@ -36,6 +36,8 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `playbooks/ca.yml` | Raíz de la CA del kit y certificado de `monitoreo` en kit01 (rol `ca_interna`). Los intermedios y los certificados de `ca_hojas_vm` los firma el mismo rol en `clinica01.yml` y `comunidad01.yml` |
 | `inventarios/kit/group_vars/all/monitoreo.yml` | Direcciones de Prometheus y blackbox, node_exporter de las VMs, orígenes de kit01 para ufw (F-14) y listas de sondas DNS, web, TCP y ping. Los puertos que abre cada VM para las sondas van en `monitoreo_puertos` de su `host_vars` |
 | `playbooks/monitoreo.yml` | node_exporter en kit01 y en las VMs, y blackbox, Prometheus, nginx (rol `nginx`) y Grafana en kit01 (roles del repositorio `observability`). Necesita la CA del kit (`ca.yml`) y el certificado LDAPS de Samba (`clinica01.yml` y `samba.yml`) |
+| `inventarios/kit/group_vars/all/registros.yml` | Direcciones de escucha de rsyslog en kit01 y equipos que envían syslog, con sus dos direcciones (`registros_equipos`) |
+| `playbooks/registros.yml` | Receptor central de rsyslog en kit01 (rol `rsyslog_central` del repositorio `observability`). El reenvío de las VMs lo hace el rol `comun` |
 | `roles/samba_ad/` | Controlador de dominio `ad.salud.movil` (ver `clinica01/samba/README.md`) |
 | `roles/kit01_vms/` | LV `vms`, imagen base y VMs con cloud-init (ver `kit01/libvirt/README.md`) |
 
@@ -50,7 +52,7 @@ Los roles de cada componente viven en su repositorio (`<repo>/ansible/roles/`) y
 | Zona horaria | Todos | `America/Bogota` (`comun_zona_horaria`) |
 | ufw | Solo el grupo `vms` (`comun_ufw`) | Entrada denegada y SSH solo desde kit01 (`comun_ufw_ssh_origenes`). En kit01 filtra nftables y ufw no se toca |
 | Cliente Chrony | Grupo `vms` (`comun_chrony_cliente`) | `chrony` con versión fija y `hold`, y un `chrony.conf` con `ntp.salud.movil` como única fuente |
-| Reenvío de rsyslog | Apagado (`comun_rsyslog_reenvio`) | TCP 514 hacia `10.20.20.10` con cola; se enciende en observability#3 |
+| Reenvío de rsyslog | Grupo `vms` (`comun_rsyslog_reenvio`) | Todo el syslog por TCP 514 hacia `10.20.20.10`, con cola en disco y `RSYSLOG_ForwardFormat`. Los archivos de `comun_rsyslog_archivos` (en clinica01, el `auth.log` de Samba) se leen con imfile, y para eso el rol agrega `/`, `/var/` y `/var/log/` al perfil local de AppArmor de rsyslogd |
 | DNS temporal | Vacío (`comun_dns_temporal`) | Si tiene valores, escribe un drop-in de `systemd-resolved` con esos DNS; vacío, lo borra. Se usó en las VMs hasta que existió BIND9 |
 
 ## Secretos
