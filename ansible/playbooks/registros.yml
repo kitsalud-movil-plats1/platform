@@ -1,0 +1,8 @@
+---
+# Logs centralizados (observability#3, D-09): receptor de rsyslog en kit01.
+# El reenvío de las VMs lo hace el rol comun (playbooks/comun.yml).
+- name: Receptor central de rsyslog en kit01
+  hosts: kit
+  become: true
+  roles:
+    - rsyslog_central
