@@ -17,3 +17,35 @@ contenido_zim:
     carpeta: phet
     titulo: Simulaciones PhET en español
     sha256: 01edd09e5e98d51dd8e5d2caa92f55c843edc15bb6162cd3b045614b1335d952
+
+# Audio y video de prueba de Jellyfin (R7, D-08, apps#5), de dominio público,
+# ya en H.264/AAC a 480p o menos y MP3 para que se reproduzcan sin
+# transcodificar (10.1). Se descargan en base (R-05). Sin metadatos de
+# Internet, Jellyfin usa el nombre del archivo como título
+contenido_medios_origen: https://archive.org/download
+contenido_medios:
+  - archivo: Resfriados y estornudos (1955).mp4
+    biblioteca: salud
+    origen: Sniffles1955/Sniffles1955.mp4
+    licencia: Dominio público (Internet Archive, Prelinger)
+    sha256: 17ac01adaf8fb4defcf365abe5e7435fa4a8d7dde45e3bab5d5371a05c5eb0f5
+  - archivo: Higiene y cuidado personal (1941).mp4
+    biblioteca: salud
+    origen: AboutFac1941/AboutFac1941.mp4
+    licencia: Dominio público (Internet Archive, Prelinger)
+    sha256: dc6a501286469bd3a4576ae2cdfb3939262cbe04a8c5e812af7b5249472638a8
+  - archivo: Sorpresa de Navidad (1947).mp4
+    biblioteca: comunidad
+    origen: SantasSuprise/SantasSuprise_512kb.mp4
+    licencia: Dominio público (Internet Archive)
+    sha256: 156ae2eefed10316e95747c66c2ef79cbf9caea7cf5d3fa42b44caf1cb93340c
+  - archivo: La luciérnaga y el vidrio (fábula).mp3
+    biblioteca: comunidad
+    origen: media_docena_2008_librivox/mediadocena_02_lopez_64kb.mp3
+    licencia: Dominio público (LibriVox, La media docena)
+    sha256: 251626404e7547edfd2f77f4544d9d45b32c725e290b689a5d6cdb233aea680b
+  - archivo: La liebre y el cangrejo (fábula).mp3
+    biblioteca: comunidad
+    origen: media_docena_2008_librivox/mediadocena_04_lopez_64kb.mp3
+    licencia: Dominio público (LibriVox, La media docena)
+    sha256: 3eba49340e35f47fb6b21de2a176001393b6925781f96288ab26b2bfc5e00c06
