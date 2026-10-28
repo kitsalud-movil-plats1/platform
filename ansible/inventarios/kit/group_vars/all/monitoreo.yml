@@ -34,6 +34,7 @@ monitoreo_web:
   - { nombre: registro, esquema: https, ruta: /, equipo: comunidad01 }
   - { nombre: consultas, esquema: https, ruta: /salud, equipo: clinica01 }
   - { nombre: biblioteca, esquema: http, ruta: /, equipo: comunidad01 }
+  - { nombre: videos, esquema: http, ruta: /health, equipo: comunidad01 }
   - { nombre: ca, esquema: http, ruta: /, equipo: comunidad01 }
 monitoreo_tcp:
   - { nombre: smb, puerto: 445, equipo: clinica01 }
