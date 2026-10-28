@@ -13,3 +13,4 @@ vault_dhis2_usuarios_password: ""  # cuentas locales del personal en DHIS2 (apps
 vault_formularios_db_password: ""  # usuario formularios de la base prerregistro, solo INSERT (apps#6)
 vault_grafana_admin_password: ""   # cuenta local admin de Grafana, respaldo sin AD (observability#2)
 vault_consultas_db_password: ""    # usuario consultas de la base prerregistro, lee y marca atendido (apps#7)
+vault_jellyfin_admin_password: ""  # cuenta admin de Jellyfin, solo desde la Interna y NetBird (apps#5)

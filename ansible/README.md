@@ -18,8 +18,9 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `playbooks/clinica01.yml` | Aplicaciones de clinica01 con los roles `docker`, `dhis2`, `ca_interna`, `consultas` y `caddy` (`-e dhis2_estado=stopped` para detener DHIS2) |
 | `inventarios/kit/group_vars/all/dhis2.yml` | Cuentas locales de DHIS2 y su rol, y las claves de los usuarios `formularios` y `consultas` de la base de prerregistro (los valores en el vault) |
 | `inventarios/kit/host_vars/clinica01.yml`, `host_vars/comunidad01.yml` | Puertos y orígenes de Caddy en ufw, nombres que puede firmar el intermedio de la CA de cada VM y certificados de servicios sin Caddy (`ca_hojas_vm`, el LDAPS de Samba en clinica01) |
-| `playbooks/comunidad01.yml` | Aplicaciones de comunidad01 con los roles `docker`, `kiwix`, `ca_interna`, `formularios` y `caddy` |
-| `inventarios/kit/group_vars/all/contenido.yml` | ZIM de la biblioteca (archivo, carpeta de origen, título y sha256) |
+| `playbooks/comunidad01.yml` | Aplicaciones de comunidad01 con los roles `docker`, `kiwix`, `jellyfin`, `ca_interna`, `formularios` y `caddy` |
+| `inventarios/kit/group_vars/all/jellyfin.yml` | Clave de `admin` de Jellyfin (el valor en el vault) y las redes que Jellyfin trata como locales (la Interna y kit01) |
+| `inventarios/kit/group_vars/all/contenido.yml` | ZIM de la biblioteca y audio y video de Jellyfin (archivo, origen o URL, sha256, título o autor y licencia, y si hay que prepararlo a H.264) |
 | `inventarios/kit/group_vars/all/dhcp.yml` | Reservas DHCPv4 de las estaciones de administración (`dhcp_reservas`) |
 | `playbooks/dhcp.yml` | Kea DHCPv4, Kea DHCPv6 sin estado y radvd en kit01 (roles `kea_dhcp4`, `kea_dhcp6` y `radvd` del repositorio `network`) |
 | `playbooks/prueba01.yml` | Enciende (`prueba01_estado=encendida`, por defecto) o apaga `prueba01` |

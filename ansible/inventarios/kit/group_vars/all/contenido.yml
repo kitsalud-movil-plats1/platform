@@ -17,3 +17,64 @@ contenido_zim:
     carpeta: phet
     titulo: Simulaciones PhET en español
     sha256: 01edd09e5e98d51dd8e5d2caa92f55c843edc15bb6162cd3b045614b1335d952
+
+# Audio y video de Jellyfin (R7, D-08, apps#5), con licencia libre. Se
+# descargan en base (R-05). Los que vienen en otro formato (preparar: true) se
+# convierten una vez en comunidad01 a H.264/AAC MP4 de 480p y unos 1 Mb/s, para
+# que se reproduzcan sin transcodificar (10.1). sha256 es el del archivo que se
+# descarga. Sin metadatos de Internet, el título es el nombre del archivo
+contenido_medios:
+  - archivo: Lo que necesitas saber acerca del lavado de manos.mp4
+    biblioteca: salud
+    url: https://upload.wikimedia.org/wikipedia/commons/6/65/Lo_que_necesitas_saber_acerca_del_lavado_de_manos.webm
+    sha256: ecf8997be561978e26afa4855457be0ed1a2acb434dd14919a95a91d4b378868
+    preparar: true
+    autor: Centers for Disease Control and Prevention (CDC)
+    licencia: Dominio público
+  - archivo: Acabe con los microbios, lávese las manos.mp4
+    biblioteca: salud
+    url: https://upload.wikimedia.org/wikipedia/commons/9/9b/Acabe_con_los_microbios._%C2%A1L%C3%A1vese_las_manos%21.webm
+    sha256: d8149ba4cd1e15b2f5fd37b1fab48bcd10ddcaa915bf5027fd111c35b3654079
+    preparar: true
+    autor: Centers for Disease Control and Prevention (CDC)
+    licencia: Dominio público
+  - archivo: Protege la salud de tu bebé con las vacunas.mp4
+    biblioteca: salud
+    url: https://upload.wikimedia.org/wikipedia/commons/3/3a/Protege_la_salud_de_su_bebe_con_las_vacunas_%2830_seconds%29.webm
+    sha256: f61f128ef14d815b62f0443d05a3716c9dc6aadc07eb2500f30a05c0e99f85de
+    preparar: true
+    autor: Centers for Disease Control and Prevention (CDC)
+    licencia: Dominio público
+  - archivo: Lactancia materna, extracción manual de la leche.mp4
+    biblioteca: salud
+    url: https://upload.wikimedia.org/wikipedia/commons/6/62/Lactancia_Materna_-_Extracci%C3%B3n_manual_de_la_leche_materna.webm
+    sha256: e871ed52560e7725a42b37449ddef5dcd718cee96dcbb4e371525c75afccbcb5
+    preparar: true
+    autor: SOS Telemedicina, Universidad Central de Venezuela
+    licencia: CC BY-SA 4.0
+  - archivo: Caminandes, Llama Drama.mp4
+    biblioteca: comunidad
+    url: https://upload.wikimedia.org/wikipedia/commons/d/d0/Caminandes-_Llama_Drama_-_Short_Movie.ogv
+    sha256: 4535b56f9e429a1b84e327b5fd752e53940ffb25741ddd012f2aee8dcbdfb0cb
+    preparar: true
+    autor: Pablo Vazquez, Beorn Leonard y Francesco Siddi; música de Jan Morgenstern (Blender)
+    licencia: CC BY 3.0
+  - archivo: Caminandes 3, Llamigos.mp4
+    biblioteca: comunidad
+    url: https://upload.wikimedia.org/wikipedia/commons/a/ab/Caminandes_3_-_Llamigos_-_Blender_Animated_Short.webm
+    sha256: 0fa2c62bc28e5f93ce6fed296efce050b22f0d5d57b568b2c2d4d5345685f1e7
+    preparar: true
+    autor: Blender Foundation
+    licencia: CC BY 3.0
+  - archivo: La luciérnaga y el vidrio (fábula).mp3
+    biblioteca: comunidad
+    url: https://archive.org/download/media_docena_2008_librivox/mediadocena_02_lopez_64kb.mp3
+    sha256: 251626404e7547edfd2f77f4544d9d45b32c725e290b689a5d6cdb233aea680b
+    autor: LibriVox, La media docena
+    licencia: Dominio público
+  - archivo: La liebre y el cangrejo (fábula).mp3
+    biblioteca: comunidad
+    url: https://archive.org/download/media_docena_2008_librivox/mediadocena_04_lopez_64kb.mp3
+    sha256: 3eba49340e35f47fb6b21de2a176001393b6925781f96288ab26b2bfc5e00c06
+    autor: LibriVox, La media docena
+    licencia: Dominio público
