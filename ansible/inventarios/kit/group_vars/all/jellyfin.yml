@@ -1,0 +1,15 @@
+---
+# Jellyfin en comunidad01 (R7, D-08, apps#5). La clave está en el vault y sigue
+# la convención del grupo (R-14).
+jellyfin_admin_password: "{{ vault_jellyfin_admin_password }}"
+
+# Redes que Jellyfin trata como locales: la Interna y kit01, que es el origen
+# de la administración por NetBird con túnel (D-18). La Comunidad llega sin
+# NAT con su IP y queda como remota, donde admin no puede entrar
+jellyfin_redes_locales:
+  - "{{ redes.interna.ipv4 }}"
+  - "{{ redes.interna.ipv6 }}"
+  - "{{ redes.servidores.gw4 }}/32"
+  - "{{ redes.servidores.gw6 }}/128"
+  - "{{ servicios_kit01.ipv4 }}/32"
+  - "{{ servicios_kit01.ipv6 }}/128"
