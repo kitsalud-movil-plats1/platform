@@ -16,3 +16,7 @@ dhis2_usuarios:
 # Usuario formularios de la base prerregistro (apps#6): solo INSERT, desde
 # comunidad01. Lo usan el rol dhis2 (clinica01) y el rol formularios (comunidad01).
 dhis2_prerregistro_password: "{{ vault_formularios_db_password }}"
+
+# Usuario consultas de la base prerregistro (apps#7): lee y marca atendido,
+# solo desde la propia clinica01. Lo usan el rol dhis2 y el rol consultas.
+dhis2_consultas_password: "{{ vault_consultas_db_password }}"
