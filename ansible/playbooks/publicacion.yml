@@ -1,0 +1,7 @@
+---
+# Publicación de contenido de clinica01 a comunidad01 (platform#10, F-12)
+- name: Origen de la publicación en clinica01
+  hosts: clinica01
+  become: true
+  roles:
+    - publicacion

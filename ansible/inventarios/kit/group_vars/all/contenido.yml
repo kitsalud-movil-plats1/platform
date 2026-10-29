@@ -78,3 +78,8 @@ contenido_medios:
     sha256: 3eba49340e35f47fb6b21de2a176001393b6925781f96288ab26b2bfc5e00c06
     autor: LibriVox, La media docena
     licencia: Dominio público
+
+# Publicación de contenido (sección 10.5, F-12, platform#10). Un timer en
+# clinica01 copia el recurso contenido a comunidad01 con rsync por SSH. El
+# usuario tiene el mismo nombre en las dos VMs
+publicacion_usuario: publicacion

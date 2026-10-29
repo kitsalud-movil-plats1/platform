@@ -1,0 +1,24 @@
+---
+- name: Usuario local que lee el recurso contenido
+  ansible.builtin.user:
+    name: "{{ publicacion_usuario }}"
+    system: true
+    home: "{{ publicacion_home }}"
+    shell: /usr/sbin/nologin
+    password: "!"
+    create_home: true
+
+# Lectura para el usuario de la publicación, también en la ACL por defecto
+# para que lo que suba el personal la herede. El rol samba_ad solo agrega sus
+# grupos, así que no quita esta entrada
+- name: ACL de lectura en el recurso contenido
+  ansible.posix.acl:
+    path: "{{ item.0 }}"
+    etype: user
+    entity: "{{ publicacion_usuario }}"
+    permissions: rx
+    default: "{{ item.1 }}"
+    state: present
+  loop: "{{ ([publicacion_origen] + publicacion_carpetas | map('regex_replace', '^', publicacion_origen ~ '/') | list) | product([false, true]) | list }}"
+  loop_control:
+    label: "{{ item.0 }}{{ ' (default)' if item.1 else '' }}"
