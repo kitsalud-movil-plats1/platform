@@ -2,3 +2,8 @@
 # Base de kit01 como hipervisor (D-04, D-21, platform#20). Lo común a kit01 y
 # las VMs (usuario, sshd, zona horaria) está en el rol comun.
 kit01_base_hostname: "{{ inventory_hostname }}"
+
+# Virtualización (D-04). qemu-kvm es un paquete virtual que provee
+# qemu-system-x86. Sin versión fija ni hold: se actualizan en la ventana de
+# mantenimiento (R-05)
+kit01_base_paquetes: [qemu-kvm, libvirt-daemon-system, virtinst]

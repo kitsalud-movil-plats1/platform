@@ -13,3 +13,9 @@
     owner: root
     group: root
     mode: "0644"
+
+# Solo se asegura que estén; sin update_cache ni upgrade
+- name: Paquetes de virtualización
+  ansible.builtin.apt:
+    name: "{{ kit01_base_paquetes }}"
+    state: present
