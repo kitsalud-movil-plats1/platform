@@ -24,12 +24,11 @@
     label: "{{ item.0 }}{{ ' (default)' if item.1 else '' }}"
 
 # Solo se descargan si faltan o no coinciden con el sha256 (F-17, solo IPv4).
-# El temporal va en la misma carpeta para que herede la ACL por defecto
+# Heredan la ACL por defecto de la carpeta, con lectura para la publicación
 - name: ZIM de la biblioteca en contenido/zim
   ansible.builtin.get_url:
     url: "{{ contenido_zim_origen }}/{{ item.carpeta }}/{{ item.archivo }}"
     dest: "{{ publicacion_zim_dir }}/{{ item.archivo }}"
-    tmp_dest: "{{ publicacion_zim_dir }}"
     checksum: "sha256:{{ item.sha256 }}"
     owner: root
     group: "{{ publicacion_gid }}"
