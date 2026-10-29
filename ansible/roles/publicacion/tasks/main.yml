@@ -22,3 +22,48 @@
   loop: "{{ ([publicacion_origen] + publicacion_carpetas | map('regex_replace', '^', publicacion_origen ~ '/') | list) | product([false, true]) | list }}"
   loop_control:
     label: "{{ item.0 }}{{ ' (default)' if item.1 else '' }}"
+
+# Solo se descargan si faltan o no coinciden con el sha256 (F-17, solo IPv4).
+# El temporal va en la misma carpeta para que herede la ACL por defecto
+- name: ZIM de la biblioteca en contenido/zim
+  ansible.builtin.get_url:
+    url: "{{ contenido_zim_origen }}/{{ item.carpeta }}/{{ item.archivo }}"
+    dest: "{{ publicacion_zim_dir }}/{{ item.archivo }}"
+    tmp_dest: "{{ publicacion_zim_dir }}"
+    checksum: "sha256:{{ item.sha256 }}"
+    owner: root
+    group: "{{ publicacion_gid }}"
+    mode: "0660"
+    timeout: 120
+  loop: "{{ contenido_zim }}"
+  loop_control:
+    label: "{{ item.archivo }}"
+
+- name: Carpeta del registro
+  ansible.builtin.file:
+    path: "{{ publicacion_registro_zim | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Registro de los ZIM del rol
+  ansible.builtin.slurp:
+    src: "{{ publicacion_registro_zim }}"
+  register: publicacion_registro
+  failed_when: false
+
+# Lo que sube el personal no está en el registro y no se toca
+- name: Quitar los ZIM del rol que ya no están en la lista
+  ansible.builtin.file:
+    path: "{{ publicacion_zim_dir }}/{{ item }}"
+    state: absent
+  loop: "{{ ((publicacion_registro.content | b64decode).splitlines() if publicacion_registro.content is defined else []) | difference(contenido_zim | map(attribute='archivo')) }}"
+
+- name: Registro de los ZIM del rol al día
+  ansible.builtin.copy:
+    content: "{{ contenido_zim | map(attribute='archivo') | join('\n') }}\n"
+    dest: "{{ publicacion_registro_zim }}"
+    owner: root
+    group: root
+    mode: "0644"

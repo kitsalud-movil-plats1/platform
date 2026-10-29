@@ -6,3 +6,10 @@ publicacion_home: /var/lib/publicacion
 # Recurso contenido de Samba (samba.yml) y sus carpetas
 publicacion_origen: "{{ samba_recursos_raiz }}/contenido"
 publicacion_carpetas: "{{ (samba_recursos | selectattr('nombre', 'eq', 'contenido') | first).carpetas }}"
+# Grupo dueño del recurso (el primero de su lista), con su gid fijo
+publicacion_gid: "{{ (samba_grupos | selectattr('nombre', 'eq', (samba_recursos | selectattr('nombre', 'eq', 'contenido') | first).grupos[0]) | first).gid }}"
+
+# ZIM de contenido_zim que pone el rol en contenido/zim. El registro guarda los
+# que puso él, para quitar solo esos cuando salen de la lista
+publicacion_zim_dir: "{{ publicacion_origen }}/zim"
+publicacion_registro_zim: /var/lib/kitsalud/zim-del-rol.txt
