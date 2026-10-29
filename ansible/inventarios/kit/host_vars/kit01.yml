@@ -8,3 +8,10 @@ comun_admin_grupos_extra: [libvirt, kvm]
 comun_ufw: false
 # node_exporter de kit01 solo en localhost (observability#1)
 node_exporter_escucha: 127.0.0.1:9100
+
+# WAN del sitio (uplink del laboratorio, docs#26). Cambia según el lugar, por
+# eso no está en red.yml. Sin RA del uplink (8.3)
+wan:
+  ipv4: 192.168.160.69/24
+  gw4: 192.168.160.1
+  dns: [192.168.215.20, 192.168.215.30]
