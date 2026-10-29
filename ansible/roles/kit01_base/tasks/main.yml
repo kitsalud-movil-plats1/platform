@@ -41,3 +41,10 @@
   check_mode: false
   when: kit01_base_red.stdout is search('Autostart:\\s+yes')
   changed_when: true
+
+# NetBird no se actualiza con el resto de paquetes: una versión nueva podría
+# cortar el acceso remoto (D-21, D-23). La configuración de NetBird no se toca
+- name: NetBird retenido
+  ansible.builtin.dpkg_selections:
+    name: netbird
+    selection: hold
