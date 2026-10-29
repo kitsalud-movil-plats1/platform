@@ -7,3 +7,7 @@ kit01_base_hostname: "{{ inventory_hostname }}"
 # qemu-system-x86. Sin versión fija ni hold: se actualizan en la ventana de
 # mantenimiento (R-05)
 kit01_base_paquetes: [qemu-kvm, libvirt-daemon-system, virtinst]
+
+# Red NAT de fábrica de libvirt (virbr0). Las VMs van a br-srv y br-com, así
+# que queda detenida y sin arranque automático
+kit01_base_red_libvirt: default

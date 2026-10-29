@@ -19,3 +19,25 @@
   ansible.builtin.apt:
     name: "{{ kit01_base_paquetes }}"
     state: present
+
+# Con virsh, sin python3-libvirt. Solo actúa si la red está activa o arranca sola
+- name: Estado de la red {{ kit01_base_red_libvirt }} de libvirt
+  ansible.builtin.command: virsh -c qemu:///system net-info {{ kit01_base_red_libvirt }}
+  register: kit01_base_red
+  changed_when: false
+  check_mode: false
+  failed_when: kit01_base_red.rc != 0 and 'no network with matching name' not in kit01_base_red.stderr
+
+# command se salta en --check y escondería la diferencia; en --check se corre
+# true, que no cambia nada y la informa
+- name: Detener la red {{ kit01_base_red_libvirt }}
+  ansible.builtin.command: "{{ 'true' if ansible_check_mode else 'virsh -c qemu:///system net-destroy ' ~ kit01_base_red_libvirt }}"
+  check_mode: false
+  when: kit01_base_red.stdout is search('Active:\\s+yes')
+  changed_when: true
+
+- name: Red {{ kit01_base_red_libvirt }} sin arranque automático
+  ansible.builtin.command: "{{ 'true' if ansible_check_mode else 'virsh -c qemu:///system net-autostart --disable ' ~ kit01_base_red_libvirt }}"
+  check_mode: false
+  when: kit01_base_red.stdout is search('Autostart:\\s+yes')
+  changed_when: true
