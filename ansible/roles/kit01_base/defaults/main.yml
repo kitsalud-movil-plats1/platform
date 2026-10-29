@@ -1,0 +1,4 @@
+---
+# Base de kit01 como hipervisor (D-04, D-21, platform#20). Lo común a kit01 y
+# las VMs (usuario, sshd, zona horaria) está en el rol comun.
+kit01_base_hostname: "{{ inventory_hostname }}"

@@ -1,0 +1,8 @@
+---
+# Base de kit01 como hipervisor (platform#20). Va después de comun.yml y antes
+# de vms.yml. No actualiza paquetes ni reinicia
+- name: Base de kit01
+  hosts: kit
+  become: true
+  roles:
+    - kit01_base

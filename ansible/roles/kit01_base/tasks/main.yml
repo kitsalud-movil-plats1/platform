@@ -1,0 +1,15 @@
+---
+- name: Hostname
+  ansible.builtin.hostname:
+    name: "{{ kit01_base_hostname }}"
+    use: systemd
+
+# Solo la línea del propio nombre; las de dc01.ad las ponen los roles grafana y samba_ad
+- name: Nombre propio en /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s'
+    line: "127.0.1.1 {{ kit01_base_hostname }}.{{ dominio }} {{ kit01_base_hostname }}"
+    owner: root
+    group: root
+    mode: "0644"
