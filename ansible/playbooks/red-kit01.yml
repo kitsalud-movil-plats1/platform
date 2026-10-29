@@ -2,8 +2,11 @@
 # Red y firewall de kit01 (network#17, D-23). Solo recarga la red o el firewall
 # si cambia el resultado efectivo, y entonces con restauración programada.
 # Primero siempre con --check --diff
-- name: Firewall de kit01
+# El firewall va primero: no depende de las direcciones y acepta siempre
+# NetBird y SSH. Después la red
+- name: Firewall y red de kit01
   hosts: kit
   become: true
   roles:
     - kit01_firewall
+    - kit01_red
