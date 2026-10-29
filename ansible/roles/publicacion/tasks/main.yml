@@ -1,0 +1,122 @@
+---
+- name: Usuario local que lee el recurso contenido
+  ansible.builtin.user:
+    name: "{{ publicacion_usuario }}"
+    system: true
+    home: "{{ publicacion_home }}"
+    shell: /usr/sbin/nologin
+    password: "!"
+    create_home: true
+
+# Lectura para el usuario de la publicación, también en la ACL por defecto
+# para que lo que suba el personal la herede. El rol samba_ad solo agrega sus
+# grupos, así que no quita esta entrada
+- name: ACL de lectura en el recurso contenido
+  ansible.posix.acl:
+    path: "{{ item.0 }}"
+    etype: user
+    entity: "{{ publicacion_usuario }}"
+    permissions: rx
+    default: "{{ item.1 }}"
+    state: present
+  loop: "{{ ([publicacion_origen] + publicacion_carpetas | map('regex_replace', '^', publicacion_origen ~ '/') | list) | product([false, true]) | list }}"
+  loop_control:
+    label: "{{ item.0 }}{{ ' (default)' if item.1 else '' }}"
+
+# Solo se descargan si faltan o no coinciden con el sha256 (F-17, solo IPv4).
+# Heredan la ACL por defecto de la carpeta, con lectura para la publicación
+- name: ZIM de la biblioteca en contenido/zim
+  ansible.builtin.get_url:
+    url: "{{ contenido_zim_origen }}/{{ item.carpeta }}/{{ item.archivo }}"
+    dest: "{{ publicacion_zim_dir }}/{{ item.archivo }}"
+    checksum: "sha256:{{ item.sha256 }}"
+    owner: root
+    group: "{{ publicacion_gid }}"
+    mode: "0660"
+    timeout: 120
+  loop: "{{ contenido_zim }}"
+  loop_control:
+    label: "{{ item.archivo }}"
+
+- name: Carpeta del registro
+  ansible.builtin.file:
+    path: "{{ publicacion_registro_zim | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Registro de los ZIM del rol
+  ansible.builtin.slurp:
+    src: "{{ publicacion_registro_zim }}"
+  register: publicacion_registro
+  failed_when: false
+
+# Lo que sube el personal no está en el registro y no se toca
+- name: Quitar los ZIM del rol que ya no están en la lista
+  ansible.builtin.file:
+    path: "{{ publicacion_zim_dir }}/{{ item }}"
+    state: absent
+  loop: "{{ ((publicacion_registro.content | b64decode).splitlines() if publicacion_registro.content is defined else []) | difference(contenido_zim | map(attribute='archivo')) }}"
+
+- name: Registro de los ZIM del rol al día
+  ansible.builtin.copy:
+    content: "{{ contenido_zim | map(attribute='archivo') | join('\n') }}\n"
+    dest: "{{ publicacion_registro_zim }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+# comunidad01 la acepta solo para el rsync de la publicación (rol
+# publicacion_destino del repositorio apps)
+- name: Carpeta de la llave
+  ansible.builtin.file:
+    path: "{{ publicacion_llave | dirname }}"
+    state: directory
+    owner: "{{ publicacion_usuario }}"
+    group: "{{ publicacion_usuario }}"
+    mode: "0700"
+
+- name: Llave de la publicación
+  community.crypto.openssh_keypair:
+    path: "{{ publicacion_llave }}"
+    type: ed25519
+    comment: "{{ publicacion_usuario }}@{{ inventory_hostname }}"
+    owner: "{{ publicacion_usuario }}"
+    group: "{{ publicacion_usuario }}"
+    mode: "0600"
+
+# Solo se acepta la llave de host de comunidad01, con su nombre y sus dos IP
+- name: Llave de host de {{ publicacion_hacia }}
+  ansible.builtin.slurp:
+    src: /etc/ssh/ssh_host_ed25519_key.pub
+  delegate_to: "{{ publicacion_hacia }}"
+  register: publicacion_llave_host
+
+- name: known_hosts con {{ publicacion_hacia }}
+  ansible.builtin.copy:
+    content: >-
+      {{ [publicacion_hacia_nombre, equipos[publicacion_hacia].ipv4, equipos[publicacion_hacia].ipv6] | join(',') }}
+      {{ (publicacion_llave_host.content | b64decode).split()[:2] | join(' ') }}
+    dest: "{{ publicacion_home }}/.ssh/known_hosts"
+    owner: "{{ publicacion_usuario }}"
+    group: "{{ publicacion_usuario }}"
+    mode: "0644"
+
+- name: Script de la publicación
+  ansible.builtin.template:
+    src: publicar-contenido.j2
+    dest: "{{ publicacion_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Servicio y timer de la publicación
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: [publicacion.service, publicacion.timer]
+  notify: Recargar systemd

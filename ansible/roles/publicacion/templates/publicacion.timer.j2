@@ -1,0 +1,11 @@
+# {{ ansible_managed }} (rol publicacion, platform#10)
+[Unit]
+Description=Publicación del recurso contenido cada {{ publicacion_cada }}
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec={{ publicacion_cada }}
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

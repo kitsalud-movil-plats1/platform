@@ -1,0 +1,24 @@
+---
+# Publicación de contenido de clinica01 a comunidad01 (platform#10, F-12)
+- name: Origen de la publicación en clinica01
+  hosts: clinica01
+  become: true
+  roles:
+    - publicacion
+
+- name: Destino de la publicación en comunidad01
+  hosts: comunidad01
+  become: true
+  roles:
+    - publicacion_destino
+
+# El timer se activa al final, cuando el destino ya acepta la llave
+- name: Timer de la publicación en clinica01
+  hosts: clinica01
+  become: true
+  tags: [timer]
+  tasks:
+    - name: Timer
+      ansible.builtin.include_role:
+        name: publicacion
+        tasks_from: timer

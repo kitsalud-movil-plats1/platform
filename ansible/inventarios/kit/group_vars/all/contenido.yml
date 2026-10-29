@@ -1,8 +1,8 @@
 ---
 # ZIM de la biblioteca (R7, D-08, sección 10.5), de la biblioteca de Kiwix.
-# Se descargan en base, nunca en campo (R-05). Kiwix los sirve desde la
-# carpeta de medios de comunidad01; el flujo de publicación (platform#10)
-# carga la misma lista en el recurso contenido/zim de clinica01.
+# Se descargan en base, nunca en campo (R-05). El rol publicacion los pone en
+# el recurso contenido/zim de clinica01, y la publicación los copia a la
+# carpeta de medios de comunidad01, donde los sirve Kiwix.
 contenido_zim_origen: https://download.kiwix.org/zim
 contenido_zim:
   - archivo: wikipedia_es_medicine_maxi_2026-07.zim
@@ -78,3 +78,11 @@ contenido_medios:
     sha256: 3eba49340e35f47fb6b21de2a176001393b6925781f96288ab26b2bfc5e00c06
     autor: LibriVox, La media docena
     licencia: Dominio público
+
+# Publicación de contenido (sección 10.5, F-12, platform#10). Un timer en
+# clinica01 copia el recurso contenido a comunidad01 con rsync por SSH. El
+# usuario tiene el mismo nombre en las dos VMs
+publicacion_usuario: publicacion
+# Llave de clinica01, que se genera en la VM y nunca sale de ella
+publicacion_home: /var/lib/publicacion
+publicacion_llave: "{{ publicacion_home }}/.ssh/id_ed25519"

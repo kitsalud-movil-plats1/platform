@@ -1,0 +1,30 @@
+---
+# Publicación de contenido de clinica01 a comunidad01 (R9, sección 10.5, F-12,
+# platform#10). El usuario local solo lee el recurso contenido.
+
+# Recurso contenido de Samba (samba.yml) y sus carpetas
+publicacion_origen: "{{ samba_recursos_raiz }}/contenido"
+publicacion_carpetas: "{{ (samba_recursos | selectattr('nombre', 'eq', 'contenido') | first).carpetas }}"
+# Grupo dueño del recurso (el primero de su lista), con su gid fijo
+publicacion_gid: "{{ (samba_grupos | selectattr('nombre', 'eq', (samba_recursos | selectattr('nombre', 'eq', 'contenido') | first).grupos[0]) | first).gid }}"
+
+# ZIM de contenido_zim que pone el rol en contenido/zim. El registro guarda los
+# que puso él, para quitar solo esos cuando salen de la lista
+publicacion_zim_dir: "{{ publicacion_origen }}/zim"
+publicacion_registro_zim: /var/lib/kitsalud/zim-del-rol.txt
+
+# Destino (rol publicacion_destino del repositorio apps) y qué carpetas van a
+# cada módulo de rsync. Con / al final se copia lo que hay dentro de la carpeta
+publicacion_hacia: comunidad01
+publicacion_hacia_nombre: "{{ publicacion_hacia }}.{{ dominio }}"
+publicacion_envios:
+  - { modulo: zim, carpetas: [zim/] }
+  - { modulo: videos, carpetas: [salud, comunidad] }
+
+# Cada cuánto corre y cuántos minutos sin cambios espera un archivo antes de
+# publicarse, para no copiar uno que se está subiendo por SMB
+publicacion_cada: 10min
+publicacion_espera_min: 2
+# Lo que se sube sin querer desde Windows o macOS no se publica
+publicacion_excluir: [".*", "Thumbs.db", "desktop.ini", "~$*"]
+publicacion_script: /usr/local/sbin/publicar-contenido

@@ -1,0 +1,46 @@
+#!/bin/bash
+# {{ ansible_managed }} (rol publicacion, platform#10)
+# Copia el recurso contenido de {{ inventory_hostname }} a {{ publicacion_hacia }} con rsync por SSH
+# (sección 10.5, F-12). En {{ publicacion_hacia }} la llave solo ejecuta rsync en modo demonio,
+# con módulos de solo escritura. --delete quita allá lo que se borró aquí,
+# salvo lo que el demonio protege (los medios del rol jellyfin). Los argumentos
+# se pasan a rsync, por ejemplo -n para una prueba en seco.
+set -uo pipefail
+
+cd {{ publicacion_origen }} || exit 1
+for c in {{ publicacion_envios | map(attribute='carpetas') | flatten | map('regex_replace', '/$', '') | join(' ') }}; do
+  # Sin la carpeta (disco sin montar) no se publica, para no vaciar el destino
+  [[ -d $c ]] || { echo "Falta $PWD/$c, no se publica" >&2; exit 1; }
+done
+
+recientes=$(mktemp)
+trap 'rm -f "$recientes"' EXIT
+
+# Lo modificado hace menos de {{ publicacion_espera_min }} min puede estar subiéndose. Queda excluido
+# (y su versión anterior en el destino también) hasta la siguiente pasada
+excluir_recientes() {
+  local base=${1%/} quitar=""
+  [[ $1 == */ ]] && quitar="$base/"
+  find "$base" -type f -mmin -{{ publicacion_espera_min }} -printf '%p\n' | while IFS= read -r f; do
+    f=${f#"$quitar"}
+    printf '/%s\n' "$(sed 's/[][*?\\]/\\&/g' <<<"$f")"
+  done
+}
+
+ssh="ssh -i {{ publicacion_llave }} -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile={{ publicacion_home }}/.ssh/known_hosts -o ConnectTimeout=15"
+opciones=(-rt --delete --delay-updates --itemize-changes --timeout=600 --exclude-from="$recientes"
+{% for e in publicacion_excluir %}
+  --exclude='{{ e }}'
+{% endfor %}
+)
+
+estado=0
+{% for envio in publicacion_envios %}
+{ {% for c in envio.carpetas %}excluir_recientes {{ c | quote }}; {% endfor %}} > "$recientes"
+[[ -s $recientes ]] && echo "{{ envio.modulo }}: espera a la siguiente pasada: $(tr '\n' ' ' < "$recientes")"
+rsync "${opciones[@]}" -e "$ssh" "$@" {{ envio.carpetas | map('quote') | join(' ') }} {{ publicacion_usuario }}@{{ publicacion_hacia_nombre }}::{{ envio.modulo }}/
+r=$?
+# 24: un archivo se borró mientras se copiaba; se resuelve en la siguiente pasada
+if (( r != 0 && r != 24 )); then echo "{{ envio.modulo }}: rsync terminó con $r" >&2; estado=1; fi
+{% endfor %}
+exit $estado
