@@ -1,0 +1,9 @@
+---
+# Red y firewall de kit01 (network#17, D-23). Solo recarga la red o el firewall
+# si cambia el resultado efectivo, y entonces con restauración programada.
+# Primero siempre con --check --diff
+- name: Firewall de kit01
+  hosts: kit
+  become: true
+  roles:
+    - kit01_firewall

@@ -13,3 +13,5 @@ wan:
 lan_mac: "52:54:00:4b:01:02"
 # La máquina anfitriona hace de NetBird: el SSH de administración entra por wan0
 kit01_firewall_if_netbird: wan0
+# Sin NetBird en el laboratorio: los roles de red no revisan su estado
+kit01_netbird: false
