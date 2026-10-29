@@ -12,8 +12,9 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `inventarios/kit/group_vars/all/red.yml` | Plan de direcciones (secciones 7 y 8). Se define solo aquí; el inventario del laboratorio lo enlaza |
 | `inventarios/kit/group_vars/all/maquinas.yml` | Definición de las VMs (vCPU, RAM, discos, MAC, IP, autostart). Campos opcionales: `red`, `direccion` (`fija` o `dhcp`), `disco_datos`, `ssh_espera` y `ssh_claves` |
 | `inventarios/kit/group_vars/all/vault.yml` | Secretos cifrados con `ansible-vault`. Sus claves están en [`vault.example.yml`](vault.example.yml) |
-| `inventarios/*/host_vars/kit01.yml` | Nombres de interfaz de cada rol (`iface_wan`, `iface_lan`, D-14, R-08) y ajustes propios de kit01 |
+| `inventarios/*/host_vars/kit01.yml` | Nombres de interfaz de cada rol (`iface_wan`, `iface_lan`, D-14, R-08), la WAN del sitio (`wan`: fija en el kit, DHCP por MAC en el laboratorio) y ajustes propios de kit01. En el laboratorio, `kit01_firewall_if_netbird: wan0` y `kit01_netbird: false` |
 | `playbooks/comun.yml` | Aplica el rol `comun` a todos los hosts. Con `prueba01` encendida se corre con `-l '!pruebas'`, porque esa VM no lleva el rol |
+| `playbooks/red-kit01.yml` | Firewall y red de kit01 (roles `kit01_firewall` y `kit01_red` del repositorio `network`). Solo recarga el firewall o la red si cambia el resultado efectivo, y entonces con restauración programada a los 120 s, que cancela solo si entra de nuevo y NetBird sigue igual. Primero siempre con `--check --diff` (ver `network/kit01/netplan/` y `network/kit01/nftables/`) |
 | `playbooks/kit01.yml` | Base de kit01 como hipervisor (rol `kit01_base`). Va después de `comun.yml` y antes de `vms.yml`; no actualiza paquetes ni reinicia |
 | `roles/kit01_base/` | Hostname, paquetes de virtualización, red `default` de libvirt detenida y NetBird retenido (ver `kit01/README.md`) |
 | `playbooks/vms.yml` | Crea las VMs que falten en kit01 (rol `kit01_vms`) y les aplica el rol `comun` |
