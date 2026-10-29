@@ -11,3 +11,14 @@
   become: true
   roles:
     - publicacion_destino
+
+# El timer se activa al final, cuando el destino ya acepta la llave
+- name: Timer de la publicación en clinica01
+  hosts: clinica01
+  become: true
+  tags: [timer]
+  tasks:
+    - name: Timer
+      ansible.builtin.include_role:
+        name: publicacion
+        tasks_from: timer

@@ -86,3 +86,38 @@
     owner: "{{ publicacion_usuario }}"
     group: "{{ publicacion_usuario }}"
     mode: "0600"
+
+# Solo se acepta la llave de host de comunidad01, con su nombre y sus dos IP
+- name: Llave de host de {{ publicacion_hacia }}
+  ansible.builtin.slurp:
+    src: /etc/ssh/ssh_host_ed25519_key.pub
+  delegate_to: "{{ publicacion_hacia }}"
+  register: publicacion_llave_host
+
+- name: known_hosts con {{ publicacion_hacia }}
+  ansible.builtin.copy:
+    content: >-
+      {{ [publicacion_hacia_nombre, equipos[publicacion_hacia].ipv4, equipos[publicacion_hacia].ipv6] | join(',') }}
+      {{ (publicacion_llave_host.content | b64decode).split()[:2] | join(' ') }}
+    dest: "{{ publicacion_home }}/.ssh/known_hosts"
+    owner: "{{ publicacion_usuario }}"
+    group: "{{ publicacion_usuario }}"
+    mode: "0644"
+
+- name: Script de la publicación
+  ansible.builtin.template:
+    src: publicar-contenido.j2
+    dest: "{{ publicacion_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Servicio y timer de la publicación
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: [publicacion.service, publicacion.timer]
+  notify: Recargar systemd

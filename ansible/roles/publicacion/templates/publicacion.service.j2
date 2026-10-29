@@ -1,0 +1,19 @@
+# {{ ansible_managed }} (rol publicacion, platform#10)
+[Unit]
+Description=Publicación del recurso contenido en {{ publicacion_hacia }}
+After=network-online.target samba-ad-dc.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User={{ publicacion_usuario }}
+Group={{ publicacion_usuario }}
+ExecStart={{ publicacion_script }}
+TimeoutStartSec=2h
+Nice=10
+IOSchedulingClass=idle
+# Solo lee; escribe únicamente su temporal
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes

@@ -1,0 +1,9 @@
+---
+# Aparte del resto del rol, para activarlo cuando el destino ya existe
+# (playbooks/publicacion.yml)
+- name: Timer de la publicación
+  ansible.builtin.systemd_service:
+    name: publicacion.timer
+    enabled: true
+    state: started
+    daemon_reload: true
