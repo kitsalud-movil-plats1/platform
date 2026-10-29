@@ -83,3 +83,6 @@ contenido_medios:
 # clinica01 copia el recurso contenido a comunidad01 con rsync por SSH. El
 # usuario tiene el mismo nombre en las dos VMs
 publicacion_usuario: publicacion
+# Llave de clinica01, que se genera en la VM y nunca sale de ella
+publicacion_home: /var/lib/publicacion
+publicacion_llave: "{{ publicacion_home }}/.ssh/id_ed25519"

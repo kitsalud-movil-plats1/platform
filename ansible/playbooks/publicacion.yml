@@ -5,3 +5,9 @@
   become: true
   roles:
     - publicacion
+
+- name: Destino de la publicación en comunidad01
+  hosts: comunidad01
+  become: true
+  roles:
+    - publicacion_destino

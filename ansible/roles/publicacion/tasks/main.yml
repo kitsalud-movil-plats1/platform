@@ -67,3 +67,22 @@
     owner: root
     group: root
     mode: "0644"
+
+# comunidad01 la acepta solo para el rsync de la publicación (rol
+# publicacion_destino del repositorio apps)
+- name: Carpeta de la llave
+  ansible.builtin.file:
+    path: "{{ publicacion_llave | dirname }}"
+    state: directory
+    owner: "{{ publicacion_usuario }}"
+    group: "{{ publicacion_usuario }}"
+    mode: "0700"
+
+- name: Llave de la publicación
+  community.crypto.openssh_keypair:
+    path: "{{ publicacion_llave }}"
+    type: ed25519
+    comment: "{{ publicacion_usuario }}@{{ inventory_hostname }}"
+    owner: "{{ publicacion_usuario }}"
+    group: "{{ publicacion_usuario }}"
+    mode: "0600"
