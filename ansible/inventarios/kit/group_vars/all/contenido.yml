@@ -1,8 +1,8 @@
 ---
 # ZIM de la biblioteca (R7, D-08, sección 10.5), de la biblioteca de Kiwix.
-# Se descargan en base, nunca en campo (R-05). Kiwix los sirve desde la
-# carpeta de medios de comunidad01; el flujo de publicación (platform#10)
-# carga la misma lista en el recurso contenido/zim de clinica01.
+# Se descargan en base, nunca en campo (R-05). El rol publicacion los pone en
+# el recurso contenido/zim de clinica01, y la publicación los copia a la
+# carpeta de medios de comunidad01, donde los sirve Kiwix.
 contenido_zim_origen: https://download.kiwix.org/zim
 contenido_zim:
   - archivo: wikipedia_es_medicine_maxi_2026-07.zim
