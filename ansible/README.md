@@ -14,6 +14,8 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `inventarios/kit/group_vars/all/vault.yml` | Secretos cifrados con `ansible-vault`. Sus claves están en [`vault.example.yml`](vault.example.yml) |
 | `inventarios/*/host_vars/kit01.yml` | Nombres de interfaz de cada rol (`iface_wan`, `iface_lan`, D-14, R-08) y ajustes propios de kit01 |
 | `playbooks/comun.yml` | Aplica el rol `comun` a todos los hosts. Con `prueba01` encendida se corre con `-l '!pruebas'`, porque esa VM no lleva el rol |
+| `playbooks/kit01.yml` | Base de kit01 como hipervisor (rol `kit01_base`). Va después de `comun.yml` y antes de `vms.yml`; no actualiza paquetes ni reinicia |
+| `roles/kit01_base/` | Hostname, paquetes de virtualización, red `default` de libvirt detenida y NetBird retenido (ver `kit01/README.md`) |
 | `playbooks/vms.yml` | Crea las VMs que falten en kit01 (rol `kit01_vms`) y les aplica el rol `comun` |
 | `playbooks/clinica01.yml` | Aplicaciones de clinica01 con los roles `docker`, `dhis2`, `ca_interna`, `consultas` y `caddy` (`-e dhis2_estado=stopped` para detener DHIS2) |
 | `inventarios/kit/group_vars/all/dhis2.yml` | Cuentas locales de DHIS2 y su rol, y las claves de los usuarios `formularios` y `consultas` de la base de prerregistro (los valores en el vault) |
