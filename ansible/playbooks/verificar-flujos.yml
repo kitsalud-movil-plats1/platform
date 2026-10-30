@@ -1,0 +1,176 @@
+---
+# Verificación de la matriz de flujos (network#10, sección 11). Prueba cada flujo
+# de network/kit01/nftables/flujos.yml desde su origen, en IPv4 e IPv6, y
+# termina con un resumen y los contadores y el log de los bloqueos en kit01.
+# Enciende prueba01 y la apaga al final; no cambia el firewall.
+#   ansible-playbook playbooks/verificar-flujos.yml
+- name: Encender prueba01
+  ansible.builtin.import_playbook: prueba01.yml
+
+- name: Inicio de la verificación
+  hosts: kit
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Hora de inicio, para leer el log después
+      ansible.builtin.command: date '+%Y-%m-%d %H:%M:%S'
+      register: flujos_inicio
+      changed_when: false
+
+    # prueba01 empieza sin aceptar el portal
+    - name: prueba01 sin autorización
+      ansible.builtin.command: nft "destroy element inet filtro {{ portal_set }} { {{ (maquinas_virtuales | selectattr('nombre', 'eq', 'prueba01') | first).mac }} }"
+      changed_when: false
+
+# Una conexión TCP es "abierto" si conecta, "rechazado" si recibe RST y "sin
+# respuesta" si se agota el tiempo (drop). Sin puerto, eco ICMP o ICMPv6
+- name: Flujos desde los equipos Linux
+  hosts: kit:vms:pruebas
+  gather_facts: false
+  vars_files:
+    - ../../../network/kit01/nftables/flujos.yml
+  vars:
+    flujos_mios: "{{ flujos | selectattr('desde', 'eq', inventory_hostname) | list }}"
+    flujos_prueba: |
+      {% if item.0.puerto is defined %}
+      timeout 4 bash -c '</dev/tcp/{{ item.1 }}/{{ item.0.puerto }}' 2>/dev/null; r=$?
+      if [ $r -eq 0 ]; then echo abierto; elif [ $r -eq 124 ]; then echo "sin respuesta"; else echo rechazado; fi
+      {% else %}
+      ping -c 2 -W 2 {{ item.1 }} >/dev/null 2>&1 && echo abierto || echo "sin respuesta"
+      {% endif %}
+  tasks:
+    - name: Antes del portal (o sin portal)
+      ansible.builtin.shell: "{{ flujos_prueba }}"
+      args:
+        executable: /bin/bash
+      loop: "{{ (flujos_mios | rejectattr('portal', 'defined') | list + flujos_mios | selectattr('portal', 'defined') | selectattr('portal', 'eq', 'antes') | list) | subelements('a') }}"
+      loop_control:
+        label: "{{ item.0.id }} {{ item.0.que }} {{ item.1 }}"
+      register: flujos_antes
+      changed_when: false
+      failed_when: false
+
+    - name: Aceptar el portal
+      ansible.builtin.uri:
+        url: "http://{{ redes.comunidad.gw4 }}/aceptar"
+        method: POST
+        headers: { Host: "portal.{{ dominio }}" }
+        status_code: [303]
+        follow_redirects: none
+      when: inventory_hostname in groups['pruebas']
+
+    - name: Después de aceptar el portal
+      ansible.builtin.shell: "{{ flujos_prueba }}"
+      args:
+        executable: /bin/bash
+      loop: "{{ flujos_mios | selectattr('portal', 'defined') | selectattr('portal', 'eq', 'despues') | subelements('a') }}"
+      loop_control:
+        label: "{{ item.0.id }} {{ item.0.que }} {{ item.1 }}"
+      register: flujos_despues
+      changed_when: false
+      failed_when: false
+
+- name: Flujos desde sw01 (la Interna sin IP de administración)
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../../../network/kit01/nftables/flujos.yml
+  vars:
+    kit01_salto: "{{ hostvars['kit01'].admin_usuario }}@{{ hostvars['kit01'].ansible_host }}"
+  tasks:
+    # RouterOS: el fetch llega a "requesting", "waiting data" o a un código HTTP si conecta, y se
+    # queda en "connecting" si no hay respuesta. El ping devuelve cuántos volvieron
+    - name: Pruebas en sw01
+      ansible.builtin.shell: >-
+        sshpass -e ssh -o StrictHostKeyChecking=accept-new
+        -o ProxyCommand="sshpass -f {{ lookup('env', 'HOME') }}/.config/kitsalud/ssh-pass ssh -W %h:%p {{ kit01_salto }}"
+        admin@{{ equipos.sw01.ipv4 }}
+        {% if item.0.puerto is defined %}
+        '/tool fetch url="http://{{ "[" ~ item.1 ~ "]" if ":" in item.1 else item.1 }}:{{ item.0.puerto }}/" keep-result=no' 2>&1 | tr '\r' '\n' |
+        awk '/requesting|waiting data|with status|finished/ {r="abierto"} /refused/ {r="rechazado"} END {print r ? r : "sin respuesta"}'
+        {% else %}
+        ':put [/ping {{ item.1 }} count=2]' 2>&1 | tr -d '\r' | grep -v '^ *$' | tail -1 | awk '{print ($1 > 0) ? "abierto" : "sin respuesta"}'
+        {% endif %}
+      environment:
+        SSHPASS: "{{ vault_sw01_password }}"
+      loop: "{{ flujos | selectattr('desde', 'eq', 'sw01') | subelements('a') }}"
+      loop_control:
+        label: "{{ item.0.id }} {{ item.0.que }} {{ item.1 }}"
+      register: flujos_sw01
+      changed_when: false
+      failed_when: false
+
+- name: Resumen
+  hosts: kit
+  become: true
+  gather_facts: false
+  vars_files:
+    - ../../../network/kit01/nftables/flujos.yml
+  tasks:
+    - name: prueba01 sin autorización otra vez
+      ansible.builtin.command: nft "destroy element inet filtro {{ portal_set }} { {{ (maquinas_virtuales | selectattr('nombre', 'eq', 'prueba01') | first).mac }} }"
+      changed_when: false
+
+    - name: Resultados
+      ansible.builtin.set_fact:
+        flujos_tabla: >-
+          {%- set l = [] -%}
+          {%- for h in groups['kit'] + groups['vms'] + groups['pruebas'] + ['localhost'] -%}
+          {%- for fase in ['flujos_antes', 'flujos_despues', 'flujos_sw01'] -%}
+          {%- for r in (hostvars[h][fase] | default({})).results | default([]) if r.item is defined and r.stdout is defined -%}
+          {%- set _ = l.append({'id': r.item.0.id, 'desde': r.item.0.desde, 'que': r.item.0.que ~ ((' (' ~ r.item.0.portal ~ ' del portal)') if r.item.0.portal is defined else ''), 'a': r.item.1, 'espera': r.item.0.espera, 'obtenido': r.stdout}) -%}
+          {%- endfor -%}
+          {%- endfor -%}
+          {%- endfor -%}
+          {{ l }}
+
+    - name: Flujo por flujo
+      ansible.builtin.debug:
+        msg: >-
+          {%- set l = [] -%}
+          {%- for f in flujos_tabla -%}
+          {%- set ok = (f.obtenido == 'abierto') == (f.espera == 'abierto') -%}
+          {%- set _ = l.append(('OK    ' if ok else 'FALLA ') ~ f.id ~ ' | ' ~ f.desde ~ ' -> ' ~ f.a ~ ' | ' ~ f.que ~ ' | espera ' ~ f.espera ~ ', ' ~ f.obtenido) -%}
+          {%- endfor -%}
+          {{ l }}
+
+    - name: Contadores de los bloqueos
+      ansible.builtin.shell: |
+        for c in bloqueo_f18 bloqueo_f20 bloqueo_f21; do
+          echo "$c: $(nft list chain inet filtro $c | grep -o 'counter packets [0-9]*' | tail -1)"
+        done
+        echo "bridge filtro_vms: $(nft list chain bridge filtro_vms forward | grep -o 'counter packets [0-9]*' | tail -1)"
+      register: flujos_contadores
+      changed_when: false
+
+    - name: Líneas del log desde el inicio
+      ansible.builtin.shell: |
+        {% for p in flujos_registros %}
+        echo "{{ p }}: $(journalctl -k --since '{{ flujos_inicio.stdout }}' --no-pager | grep -c '{{ p }} ')"
+        {% endfor %}
+      register: flujos_log
+      changed_when: false
+
+    - name: Contadores y log
+      ansible.builtin.debug:
+        msg: "{{ flujos_contadores.stdout_lines + flujos_log.stdout_lines }}"
+
+    - name: Apagar prueba01
+      ansible.builtin.shell: >
+        virsh -c qemu:///system shutdown prueba01 &&
+        for i in $(seq 1 60); do
+          [ "$(virsh -c qemu:///system domstate prueba01)" = "shut off" ] && exit 0; sleep 2;
+        done; exit 1
+      changed_when: true
+
+    # bloqueado vale con "sin respuesta" (drop) o "rechazado" (RST del portal)
+    - name: Todos los flujos como se esperaba
+      ansible.builtin.assert:
+        that: flujos_fallas | length == 0
+        fail_msg: "Fallan {{ flujos_fallas | length }} de {{ flujos_tabla | length }} pruebas (ver Flujo por flujo)"
+        success_msg: "{{ flujos_tabla | length }} pruebas, todas como se esperaba"
+      vars:
+        flujos_fallas: >-
+          {{ flujos_tabla | selectattr('espera', 'eq', 'abierto') | rejectattr('obtenido', 'eq', 'abierto') | list +
+             flujos_tabla | selectattr('espera', 'eq', 'bloqueado') | selectattr('obtenido', 'eq', 'abierto') | list }}
+
