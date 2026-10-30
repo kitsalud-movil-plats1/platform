@@ -6,7 +6,7 @@ Servicios de plataforma del kit.
 |---|---|---|
 | `kit01/` | kit01 | Base del hipervisor (hostname, KVM/libvirt, red `default` de libvirt detenida y NetBird retenido); se despliega con el rol `kit01_base` de Ansible |
 | `kit01/libvirt/` | kit01 | VMs `clinica01` y `comunidad01` (recursos, red, discos en el LV `vms`, autostart y acceso); se crean con el rol `kit01_vms` de Ansible |
-| `kit01/bind9/` | kit01 | Zona `salud.movil` e inversas v4/v6 en BIND9, autoritativo y recursivo para el kit; se despliega con el rol `bind9` de Ansible. Delegación de `ad.salud.movil` y respuestas para la detección de portal, más adelante |
+| `kit01/bind9/` | kit01 | Zona `salud.movil` e inversas v4/v6 en BIND9, autoritativo y recursivo para el kit; se despliega con el rol `bind9` de Ansible. Delegación de `ad.salud.movil` a Samba AD |
 | `kit01/chrony/` | kit01 | Servidor NTP (`ntp.salud.movil`) con el pool como fuente y `local stratum 10 orphan` sin Internet; se despliega con el rol `chrony` de Ansible |
 | `kit01/ca/` | kit01 → VMs | CA interna del kit: raíz en kit01, un intermedio por VM limitado a sus nombres y el certificado de `monitoreo`; se despliega con el rol `ca_interna` de Ansible |
 | `kit01/nut/` | kit01 | NUT con `dummy-ups` y script de apagado ordenado (comunidad01 → clinica01 → kit01) |
