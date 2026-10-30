@@ -1,0 +1,9 @@
+---
+# Aparte del resto del rol, para activarlo cuando las VMs ya aceptan la llave
+# (playbooks/backups.yml)
+- name: Timer del backup
+  ansible.builtin.systemd_service:
+    name: backup.timer
+    enabled: true
+    state: started
+    daemon_reload: true

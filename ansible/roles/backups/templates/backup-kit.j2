@@ -1,0 +1,140 @@
+#!/bin/bash
+# {{ ansible_managed }} (rol backups, platform#11)
+# Backup del kit con restic en modelo pull (R11, D-10, sección 10.6). Monta el
+# disco USB por UUID, extrae de cada VM por SSH al área temporal (la llave allá
+# solo ejecuta el comando forzado del rol backup_origen), hace un snapshot por
+# tipo (config, recursos, bd y dominio), aplica la retención y desmonta el
+# disco, también si algo falla. Si el disco no tiene repositorio, lo crea.
+# Lo que no se pudo extraer queda fuera del snapshot y el servicio termina con
+# error (UnidadFallida). BACKUP_UUID usa otro disco, por ejemplo uno de prueba.
+set -uo pipefail
+
+UUID=${BACKUP_UUID:-{{ backup_disco_uuid }}}
+DISCO=/dev/disk/by-uuid/$UUID
+MONTAJE={{ backup_montaje }}
+STAGING={{ backup_staging }}
+export RESTIC_REPOSITORY={{ backup_repositorio }}
+export RESTIC_PASSWORD_FILE={{ backup_clave }}
+export RESTIC_CACHE_DIR={{ backup_cache }}
+SSH="ssh -i {{ backup_llave }} -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile={{ backup_dir }}/known_hosts -o ConnectTimeout=15 -o ServerAliveInterval=30"
+
+estado=0
+error() { echo "$*" >&2; estado=1; }
+
+# Rutas del área temporal que entran en cada snapshot, una por línea
+declare -A rutas=([config]="" [recursos]="" [bd]="" [dominio]="")
+agregar() { rutas[$1]+="$2"$'\n'; }
+
+# Primera dirección de la VM que responde al ping del comando forzado. Espera
+# hasta {{ backup_espera_vm }} s, por si kit01 acaba de arrancar
+conectar() {
+  local fin=$((SECONDS + {{ backup_espera_vm }})) ip
+  while ((SECONDS < fin)); do
+    for ip in "$@"; do
+      if [[ $($SSH "{{ backup_usuario }}@$ip" ping 2>/dev/null) == ok ]]; then echo "$ip"; return 0; fi
+    done
+    sleep 15
+  done
+  return 1
+}
+
+# Módulo de rsync de solo lectura a una carpeta del área temporal. Se conserva
+# entre pasadas, así solo se transfiere lo que cambió
+copiar() {
+  local ip=$1 destino=$2 modulo=$3 r
+  mkdir -p "$destino"
+  rsync -aHAX --numeric-ids --delete --timeout=600 -e "$SSH" "{{ backup_usuario }}@[$ip]::$modulo/" "$destino/"
+  r=$?
+  # 24: un archivo se borró mientras se copiaba
+  ((r == 0 || r == 24))
+}
+
+# Salida de una orden del comando forzado a un archivo, que solo se reemplaza si
+# la orden terminó bien y dejó algo
+volcar() {
+  local ip=$1 archivo=$2 orden=$3
+  mkdir -p "${archivo%/*}"
+  if $SSH "{{ backup_usuario }}@$ip" "$orden" >"$archivo.parcial" && [[ -s $archivo.parcial ]]; then
+    mv "$archivo.parcial" "$archivo"
+  else
+    rm -f "$archivo.parcial"
+    return 1
+  fi
+}
+
+[[ -e $DISCO ]] || { echo "El disco de backups ($UUID) no está conectado" >&2; exit 1; }
+mountpoint -q "$MONTAJE" && { echo "$MONTAJE ya está montado" >&2; exit 1; }
+mount -o noatime,nodev,nosuid,noexec "$DISCO" "$MONTAJE" || { echo "No se pudo montar $DISCO" >&2; exit 1; }
+trap 'sync; umount "$MONTAJE" || echo "No se pudo desmontar $MONTAJE" >&2' EXIT
+echo "Disco $UUID montado en $MONTAJE"
+
+if ! restic cat config >/dev/null 2>&1; then
+  # Un repositorio que existe pero no abre (clave distinta) no se toca
+  [[ -e $RESTIC_REPOSITORY ]] && { echo "$RESTIC_REPOSITORY existe pero restic no lo abre" >&2; exit 1; }
+  echo "Repositorio nuevo en $RESTIC_REPOSITORY"
+  restic init || exit 1
+fi
+
+{% for nombre, e in backup_equipos.items() %}
+# {{ nombre }}
+if ip=$(conectar {{ e.direcciones | join(' ') }}); then
+  echo "{{ nombre }}: extrayendo por $ip"
+{% for m in e.modulos %}
+  if copiar "$ip" "$STAGING/{{ nombre }}/{{ m.nombre }}" {{ m.nombre }}; then
+    agregar {{ m.tipo }} "$STAGING/{{ nombre }}/{{ m.nombre }}"
+  else
+    error "{{ nombre }}: falló rsync de {{ m.nombre }}"
+  fi
+{% endfor %}
+{% if e.postgres is defined %}
+{% for b in e.postgres.bases %}
+  if volcar "$ip" "$STAGING/{{ nombre }}/postgres/{{ b }}.dump" "postgres {{ b }}"; then
+    agregar bd "$STAGING/{{ nombre }}/postgres/{{ b }}.dump"
+  else
+    error "{{ nombre }}: falló pg_dump de {{ b }}"
+  fi
+{% endfor %}
+  if volcar "$ip" "$STAGING/{{ nombre }}/postgres/globales.sql" postgres-globales; then
+    agregar bd "$STAGING/{{ nombre }}/postgres/globales.sql"
+  else
+    error "{{ nombre }}: falló pg_dumpall de los roles"
+  fi
+{% endif %}
+{% if e.dominio | default(false) %}
+  if volcar "$ip" "$STAGING/{{ nombre }}/dominio/dominio.tar.bz2" dominio; then
+    agregar dominio "$STAGING/{{ nombre }}/dominio/dominio.tar.bz2"
+  else
+    error "{{ nombre }}: falló el backup del dominio"
+  fi
+{% endif %}
+else
+  error "{{ nombre }}: no responde por {{ e.direcciones | join(' ni por ') }}"
+fi
+
+{% endfor %}
+# Configuraciones de {{ inventory_hostname }}, sin pasar por el área temporal
+{% for r in backup_kit01_rutas %}
+agregar config {{ r }}
+{% endfor %}
+
+{% set tipos = ['config'] + (backup_equipos.values() | map(attribute='modulos') | flatten | map(attribute='tipo') | list) %}
+{% if backup_equipos.values() | selectattr('postgres', 'defined') | list | length > 0 %}{% set tipos = tipos + ['bd'] %}{% endif %}
+{% if backup_equipos.values() | selectattr('dominio', 'defined') | selectattr('dominio') | list | length > 0 %}{% set tipos = tipos + ['dominio'] %}{% endif %}
+for tipo in {{ ['config', 'recursos', 'bd', 'dominio'] | select('in', tipos) | join(' ') }}; do
+  [[ -n ${rutas[$tipo]} ]] || { error "Sin datos para el snapshot $tipo"; continue; }
+  mapfile -t lista < <(printf '%s' "${rutas[$tipo]}")
+  echo "Snapshot $tipo: ${lista[*]}"
+  # 3: snapshot creado, pero algún archivo no se pudo leer
+  restic backup --host {{ inventory_hostname }} --tag "$tipo" "${lista[@]}" || error "restic backup de $tipo terminó con $?"
+done
+
+restic forget --host {{ inventory_hostname }} --group-by host,tags \
+  --keep-weekly {{ backup_retener_semanales }} --keep-monthly {{ backup_retener_mensuales }} --prune || error "Falló la retención"
+restic check || error "restic check encontró errores"
+
+# Los dumps ya están en el repositorio
+rm -rf "$STAGING"/*/postgres "$STAGING"/*/dominio
+
+restic snapshots --latest 1 --group-by tags --compact
+df -h "$MONTAJE" | tail -1
+exit $estado

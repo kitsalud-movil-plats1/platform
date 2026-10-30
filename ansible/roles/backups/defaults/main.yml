@@ -1,0 +1,16 @@
+---
+# Backups pull con restic en kit01 (R11, D-10, sección 10.6, platform#11).
+# Qué se extrae, cada cuánto y la retención están en group_vars/all/backups.yml.
+backup_dir: /etc/kitsalud/backup
+# Clave del repositorio, desde el vault; solo la lee root
+backup_clave: "{{ backup_dir }}/restic.clave"
+# Área temporal donde kit01 junta lo extraído antes de restic. Las copias de
+# rsync se conservan entre pasadas (solo se transfiere lo que cambió); los
+# dumps se borran después de cada snapshot
+backup_staging: /var/lib/kitsalud/backup
+backup_montaje: /mnt/backup
+backup_repositorio: "{{ backup_montaje }}/restic"
+backup_cache: /var/cache/restic
+backup_script: /usr/local/sbin/backup-kit
+# Hasta cuántos segundos espera a que cada VM responda (después de un arranque)
+backup_espera_vm: 600
