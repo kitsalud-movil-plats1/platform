@@ -1,0 +1,24 @@
+---
+# Backups pull con restic al disco USB (platform#11, R11, D-10, F-02)
+- name: Backups en kit01
+  hosts: kit
+  become: true
+  roles:
+    - backups
+
+- name: Origen de los backups en las VMs
+  hosts: vms
+  become: true
+  roles:
+    - backup_origen
+
+# El timer se activa al final, cuando las VMs ya aceptan la llave
+- name: Timer del backup en kit01
+  hosts: kit
+  become: true
+  tags: [timer]
+  tasks:
+    - name: Timer
+      ansible.builtin.include_role:
+        name: backups
+        tasks_from: timer

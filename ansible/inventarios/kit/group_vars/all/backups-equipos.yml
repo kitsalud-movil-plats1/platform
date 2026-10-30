@@ -1,0 +1,49 @@
+---
+# Disco, direcciones y qué se extrae de cada equipo en los backups del kit
+# (platform#11). La política está en backups.yml; el laboratorio virtual tiene
+# su propia versión de este archivo.
+
+# Disco USB de backups (contexto/equipos/disco-usb-backups.md). Se monta por
+# UUID solo durante la ventana
+backup_disco_uuid: 65308479-a4c6-4315-b83f-8cc61382bdcc
+
+# Direcciones de kit01 en br-srv desde las que entra a las VMs (F-02)
+backup_desde:
+  - "{{ redes.servidores.gw4 }}"
+  - "{{ servicios_kit01.ipv4 }}"
+  - "{{ redes.servidores.gw6 }}"
+  - "{{ servicios_kit01.ipv6 }}"
+
+# Qué se extrae de cada VM. La primera dirección que responde es la que se usa.
+# Cada módulo de rsync es de solo lectura, y su tipo es la etiqueta del
+# snapshot de restic: config, recursos, bd o dominio
+backup_equipos:
+  clinica01:
+    direcciones: ["{{ equipos.clinica01.ipv6 }}", "{{ equipos.clinica01.ipv4 }}"]
+    modulos:
+      - { nombre: etc, ruta: /etc, tipo: config }
+      # Compose, .env, archivos de DHIS2 y datos de Caddy (con el intermedio de
+      # la CA). Los datos de PostgreSQL van por pg_dump y los recursos aparte
+      - nombre: srv
+        ruta: /srv
+        tipo: config
+        excluir: [/samba/, /dhis2/postgres/, /dhis2-prueba-humo/, /lost+found/]
+      - { nombre: archivos, ruta: /srv/samba/archivos, tipo: recursos }
+      - { nombre: contenido, ruta: /srv/samba/contenido, tipo: recursos }
+    # PostgreSQL de DHIS2 (rol dhis2 del repositorio apps): base de DHIS2 y de
+    # los formularios de prerregistro, más los roles
+    postgres:
+      contenedor: dhis2-db-1
+      usuario: dhis
+      bases: [dhis2, prerregistro]
+    # samba-tool domain backup offline
+    dominio: true
+  comunidad01:
+    direcciones: ["{{ equipos.comunidad01.ipv6 }}", "{{ equipos.comunidad01.ipv4 }}"]
+    modulos:
+      - { nombre: etc, ruta: /etc, tipo: config }
+      # Los medios son una copia de contenido o los descarga Ansible (10.6)
+      - nombre: srv
+        ruta: /srv
+        tipo: config
+        excluir: [/medios/, /jellyfin/cache/, /lost+found/]

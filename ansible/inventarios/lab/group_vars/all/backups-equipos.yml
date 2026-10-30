@@ -1,0 +1,15 @@
+---
+# Backups en el laboratorio virtual (platform#11). Un disco virtual USB de 2 GB
+# en kitlab-kit01 hace de disco de backups, y kitlab-cliente hace de VM.
+backup_disco_uuid: 82c7f35c-a0ce-4539-8e02-4fb2e626d486
+
+# kitlab-kit01 llega al cliente desde la Interna
+backup_desde: ["{{ redes.interna.gw4 }}", "{{ redes.interna.gw6 }}"]
+
+backup_equipos:
+  kitlab-cliente:
+    direcciones: ["fd5a:fc7e:d716:10:5054:ff:fe4b:201", "10.20.10.10"]
+    modulos:
+      - { nombre: etc, ruta: /etc, tipo: config }
+      # Carpeta de prueba para la restauración (P11)
+      - { nombre: prueba, ruta: /srv/prueba, tipo: recursos, excluir: [/temporal/] }

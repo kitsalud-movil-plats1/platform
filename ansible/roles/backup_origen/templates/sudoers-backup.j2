@@ -1,0 +1,4 @@
+# {{ ansible_managed }} (rol backup_origen, platform#11)
+# {{ backup_usuario }} solo puede ejecutar el comando forzado, que lee la orden de SSH_ORIGINAL_COMMAND
+Defaults!{{ backup_origen_comando }} env_keep += "SSH_ORIGINAL_COMMAND"
+{{ backup_usuario }} ALL=(root) NOPASSWD: {{ backup_origen_comando }} ""
