@@ -15,3 +15,19 @@ wan:
   ipv4: 192.168.160.69/24
   gw4: 192.168.160.1
   dns: [192.168.215.20, 192.168.215.30]
+
+# Firewall (network#10). Más tiempo antes de restaurar, para las comprobaciones:
+# sondas de Prometheus y los dos flujos entre las VMs (F-11, F-12)
+kit01_firewall_restauracion: 300
+kit01_firewall_sondas: true
+kit01_firewall_comprobaciones:
+  - nombre: formularios hacia PostgreSQL (F-11)
+    equipo: comunidad01
+    comando: >-
+      timeout 5 bash -c '</dev/tcp/{{ equipos.clinica01.ipv4 }}/5432' &&
+      timeout 5 bash -c '</dev/tcp/{{ equipos.clinica01.ipv6 }}/5432'
+  - nombre: publicación hacia comunidad01 (F-12)
+    equipo: clinica01
+    comando: >-
+      timeout 5 bash -c '</dev/tcp/{{ equipos.comunidad01.ipv4 }}/22' &&
+      timeout 5 bash -c '</dev/tcp/{{ equipos.comunidad01.ipv6 }}/22'
