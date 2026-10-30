@@ -1,0 +1,23 @@
+# {{ ansible_managed }} (rol backup_origen, platform#11)
+# rsync en modo demonio que lanza el comando forzado de la llave de
+# {{ backup_origen_desde_equipo }}. Corre como root para leer todo con sus dueños, ACL y atributos
+# extendidos, pero solo de lectura: {{ backup_origen_desde_equipo }} no puede escribir ni borrar nada.
+use chroot = yes
+numeric ids = yes
+read only = yes
+write only = no
+list = no
+uid = root
+gid = root
+refuse options = remove-source-files remove-sent-files
+timeout = 600
+# Sin log file, el demonio registra en syslog y llega al log central (F-15)
+syslog tag = backup
+{% for m in backup_origen.modulos %}
+
+[{{ m.nombre }}]
+	path = {{ m.ruta }}
+{% if m.excluir | default([]) | length > 0 %}
+	exclude = {{ m.excluir | join(' ') }}
+{% endif %}
+{% endfor %}

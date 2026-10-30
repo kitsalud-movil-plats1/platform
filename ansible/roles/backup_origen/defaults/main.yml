@@ -1,0 +1,10 @@
+---
+# Origen de los backups pull en cada VM (R11, D-10, sección 10.6, platform#11).
+# kit01 entra con una llave que solo ejecuta el comando forzado, y el comando
+# solo extrae lo de backup_equipos (group_vars/all/backups.yml).
+backup_origen: "{{ backup_equipos[inventory_hostname] }}"
+backup_origen_dir: /etc/kitsalud/backup
+backup_origen_llaves: /etc/ssh/backup/authorized_keys
+backup_origen_comando: /usr/local/sbin/backup-extraer
+# Equipo que extrae, del que se lee la llave pública (rol backups)
+backup_origen_desde_equipo: kit01

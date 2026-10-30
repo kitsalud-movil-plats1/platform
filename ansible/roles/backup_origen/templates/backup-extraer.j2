@@ -1,0 +1,43 @@
+#!/bin/bash
+# {{ ansible_managed }} (rol backup_origen, platform#11)
+# Comando forzado de la llave de backups de {{ backup_origen_desde_equipo }} (D-10, sección 10.6). Corre
+# como root por sudo y solo acepta estas órdenes, que llegan en SSH_ORIGINAL_COMMAND:
+#   ping                        comprueba la conexión
+#   rsync --server --daemon .   rsync en modo demonio con módulos de solo lectura
+{% if backup_origen.postgres is defined %}
+#   postgres-globales           roles de PostgreSQL (pg_dumpall --globals-only)
+#   postgres <base>             pg_dump en formato custom de {{ backup_origen.postgres.bases | join(' o ') }}
+{% endif %}
+{% if backup_origen.dominio | default(false) %}
+#   dominio                     samba-tool domain backup offline, como tar.bz2
+{% endif %}
+# Todo sale por la salida estándar; los mensajes, por la de error.
+set -euo pipefail
+
+orden=${SSH_ORIGINAL_COMMAND:-}
+logger -t backup-extraer -p authpriv.info "orden: ${orden:-(vacía)}"
+
+case $orden in
+  ping)
+    echo ok ;;
+  "rsync --server --daemon .")
+    exec rsync --server --daemon --config={{ backup_origen_dir }}/rsyncd.conf . ;;
+{% if backup_origen.postgres is defined %}
+  postgres-globales)
+    exec docker exec {{ backup_origen.postgres.contenedor }} pg_dumpall -U {{ backup_origen.postgres.usuario }} --globals-only ;;
+{% for b in backup_origen.postgres.bases %}
+  "postgres {{ b }}")
+    exec docker exec {{ backup_origen.postgres.contenedor }} pg_dump -U {{ backup_origen.postgres.usuario }} -Fc {{ b }} ;;
+{% endfor %}
+{% endif %}
+{% if backup_origen.dominio | default(false) %}
+  dominio)
+    dir=$(mktemp -d /var/tmp/backup-dominio.XXXXXX)
+    trap 'rm -rf "$dir"' EXIT
+    samba-tool domain backup offline --targetdir="$dir" >&2
+    cat "$dir"/samba-backup-*.tar.bz2 ;;
+{% endif %}
+  *)
+    echo "Orden no permitida: $orden" >&2
+    exit 1 ;;
+esac
