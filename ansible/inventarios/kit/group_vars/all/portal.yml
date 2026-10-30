@@ -1,0 +1,7 @@
+---
+# Portal cautivo en kit01 (R5, D-22, sección 6.4, network#8). La Comunidad
+# acepta las condiciones y su MAC queda autorizada portal_timeout
+portal_set: portal_ok
+portal_timeout: 8h
+# Servicio que agrega la MAC al set, detrás de nginx
+portal_app: 127.0.0.1:8081

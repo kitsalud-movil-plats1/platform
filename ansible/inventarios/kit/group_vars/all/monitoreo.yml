@@ -28,7 +28,8 @@ monitoreo_dns_consultas:
   # Comprueba la delegación de ad.salud.movil a Samba AD
   - { nombre: "dc01.ad.{{ dominio }}", tipo: A, respuesta: "{{ equipos.clinica01.ipv4 }}" }
 # equipo es una entrada de equipos (red.yml); se sondea cada familia que tenga.
-# Con ipv4 e ipv6 se sondean esas direcciones (kit01 no está en equipos).
+# Con ipv4 e ipv6 se sondean esas direcciones (kit01 no está en equipos), en
+# las web y en las TCP.
 monitoreo_web:
   - { nombre: pacientes, esquema: https, ruta: /api/ping, equipo: clinica01 }
   - { nombre: registro, esquema: https, ruta: /, equipo: comunidad01 }
@@ -36,6 +37,8 @@ monitoreo_web:
   - { nombre: biblioteca, esquema: http, ruta: /, equipo: comunidad01 }
   - { nombre: videos, esquema: http, ruta: /health, equipo: comunidad01 }
   - { nombre: ca, esquema: http, ruta: /, equipo: comunidad01 }
+  # Portal cautivo en las direcciones de kit01 en la Comunidad (network#8)
+  - { nombre: portal, esquema: http, ruta: /, equipo: kit01, ipv4: "{{ redes.comunidad.gw4 }}", ipv6: "{{ redes.comunidad.gw6 }}" }
 monitoreo_tcp:
   - { nombre: smb, puerto: 445, equipo: clinica01 }
   - { nombre: postgresql, puerto: 5432, equipo: clinica01 }

@@ -1,0 +1,9 @@
+---
+# Portal cautivo de kit01 (network#8): nginx, las páginas y el servicio que
+# autoriza la MAC. El set, la redirección y los flujos los pone red-kit01.yml
+- name: Portal cautivo en kit01
+  hosts: kit
+  become: true
+  roles:
+    - nginx
+    - kit01_portal
