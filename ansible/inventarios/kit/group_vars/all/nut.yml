@@ -1,0 +1,9 @@
+---
+# UPS lógica y apagado ordenado (C-01, sección 13, platform#13). El rol nut
+# tiene el resto de los valores. El laboratorio virtual tiene su propia versión.
+
+# Orden de apagado: primero la Comunidad, después la Clínica (PostgreSQL y
+# Samba cierran dentro de su VM) y al final kit01
+nut_orden_vms: [comunidad01, clinica01]
+# Segundos de apagado limpio por VM antes de forzarlo
+nut_espera_vm: 180

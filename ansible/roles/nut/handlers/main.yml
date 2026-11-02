@@ -1,0 +1,19 @@
+---
+- name: Recargar systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Reiniciar el driver de NUT
+  ansible.builtin.systemd_service:
+    name: "nut-driver@{{ nut_ups }}"
+    state: restarted
+
+- name: Reiniciar upsd
+  ansible.builtin.systemd_service:
+    name: nut-server
+    state: restarted
+
+- name: Reiniciar upsmon
+  ansible.builtin.systemd_service:
+    name: nut-monitor
+    state: restarted

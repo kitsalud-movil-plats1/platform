@@ -1,0 +1,33 @@
+#!/bin/bash
+# {{ ansible_managed }} (rol nut, platform#13)
+# Simula la UPS lógica del kit (C-01, sección 13) cambiando el estado que lee
+# dummy-ups. ol = con corriente, ob = en batería, lb = en batería y baja; con
+# lb, upsmon ejecuta kit-apagado. Sin argumentos muestra el estado.
+#   sudo kit-ups ol|ob|lb
+set -eu
+ESTADO={{ nut_estado }}
+
+case ${1:-} in
+  ol) estado="OL"; carga=100; autonomia=7200 ;;
+  ob) estado="OB DISCHRG"; carga=60; autonomia=4300 ;;
+  lb) estado="OB DISCHRG LB"; carga=10; autonomia=300 ;;
+  "") upsc {{ nut_ups }}@localhost 2>/dev/null | grep -E '^(ups.status|battery.charge|battery.runtime):'; exit 0 ;;
+  *) echo "Uso: kit-ups ol|ob|lb" >&2; exit 2 ;;
+esac
+
+# Archivo nuevo y renombrado, así dummy-ups ve el cambio de fecha y nunca lee
+# uno a medio escribir
+tmp=$(mktemp "${ESTADO}.XXXXXX")
+cat > "$tmp" <<FIN
+ups.mfr: Kit Salud
+ups.model: UPS logica (dummy-ups)
+ups.status: $estado
+battery.charge: $carga
+battery.runtime: $autonomia
+ups.load: 8
+FIN
+chown nut:nut "$tmp"
+chmod 0640 "$tmp"
+mv "$tmp" "$ESTADO"
+logger -t kit-ups "UPS lógica en $estado (carga $carga %, autonomía $autonomia s)"
+echo "UPS lógica en $estado"

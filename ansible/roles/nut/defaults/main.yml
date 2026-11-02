@@ -1,0 +1,14 @@
+---
+# UPS lógica con NUT y apagado ordenado del kit (C-01, sección 13, platform#13).
+# El orden de las VMs y las esperas están en group_vars/all/nut.yml.
+nut_ups: kit
+nut_puerto: 3493
+nut_dir: /etc/kitsalud/nut
+# Estado de la UPS que lee dummy-ups. Vive en /run y kit-ups-inicial lo deja
+# en OL en cada arranque, así kit01 no se vuelve a apagar al encender con LB
+nut_estado: /run/nut/{{ nut_ups }}.dev
+nut_estado_inicial: /etc/nut/{{ nut_ups }}-inicial.dev
+# Con este archivo (y menos de nut_simulacro_vigencia segundos de antigüedad)
+# kit-apagado apaga las VMs pero no kit01
+nut_simulacro: "{{ nut_dir }}/simulacro"
+nut_simulacro_vigencia: 3600

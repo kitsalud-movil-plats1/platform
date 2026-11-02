@@ -1,0 +1,95 @@
+---
+- name: NUT con versión fija
+  ansible.builtin.apt:
+    name:
+      - "nut-server={{ version_nut }}"
+      - "nut-client={{ version_nut }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Retener NUT
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop: [nut-server, nut-client]
+
+- name: Carpeta del simulacro
+  ansible.builtin.file:
+    path: "{{ nut_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# Un simulacro olvidado nunca sobrevive a una ejecución del rol
+- name: Sin simulacro pendiente
+  ansible.builtin.file:
+    path: "{{ nut_simulacro }}"
+    state: absent
+
+- name: Configuración de NUT sin credenciales
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/nut/{{ item }}"
+    owner: root
+    group: nut
+    mode: "0640"
+  loop: [nut.conf, ups.conf, upsd.conf]
+  notify: [Reiniciar el driver de NUT, Reiniciar upsd, Reiniciar upsmon]
+
+- name: Usuario de upsmon y su conexión
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/nut/{{ item }}"
+    owner: root
+    group: nut
+    mode: "0640"
+  loop: [upsd.users, upsmon.conf]
+  no_log: true
+  notify: [Reiniciar upsd, Reiniciar upsmon]
+
+- name: Estado inicial de la UPS lógica (OL)
+  ansible.builtin.template:
+    src: estado.dev.j2
+    dest: "{{ nut_estado_inicial }}"
+    owner: root
+    group: root
+    mode: "0644"
+  vars:
+    nut_estado_ups: OL
+    nut_carga: 100
+    nut_autonomia: 7200
+
+# Solo en el arranque; después el estado lo cambian kit-ups y kit-apagado
+- name: Unidad que deja la UPS en OL al arrancar
+  ansible.builtin.template:
+    src: kit-ups-inicial.service.j2
+    dest: /etc/systemd/system/kit-ups-inicial.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar systemd
+
+- name: Scripts para simular la UPS y para el apagado ordenado
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/usr/local/sbin/{{ item }}"
+    owner: root
+    group: root
+    mode: "0755"
+  loop: [kit-ups, kit-apagado]
+
+- name: Handlers pendientes antes de arrancar
+  ansible.builtin.meta: flush_handlers
+
+- name: Driver, upsd y upsmon activos
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
+    - kit-ups-inicial
+    - "nut-driver@{{ nut_ups }}"
+    - nut-server
+    - nut-monitor

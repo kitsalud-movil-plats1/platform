@@ -1,0 +1,16 @@
+# {{ ansible_managed }} (rol nut, platform#13)
+# La UPS lógica arranca siempre en OL. Si kit01 se apagó con LB, al encender
+# upsmon no lo vuelve a apagar. Es una unidad propia porque nut-driver-enumerator
+# borra los drop-in de nut-driver@{{ nut_ups }} cuando cambia ups.conf
+[Unit]
+Description=UPS lógica del kit en OL al arrancar (platform#13)
+Before=nut-driver@{{ nut_ups }}.service nut-driver.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/install -d -o nut -g nut -m 0770 /run/nut
+ExecStart=/usr/bin/install -o nut -g nut -m 0640 {{ nut_estado_inicial }} {{ nut_estado }}
+
+[Install]
+WantedBy=multi-user.target

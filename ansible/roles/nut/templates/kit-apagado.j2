@@ -1,0 +1,69 @@
+#!/bin/bash
+# {{ ansible_managed }} (rol nut, platform#13)
+# Apagado ordenado del kit (C-01, sección 13). Lo ejecuta upsmon cuando la UPS
+# está en batería baja: apaga {{ nut_orden_vms | join(' → ') }} y después
+# kit01. Cada VM tiene {{ nut_espera_vm }} s para cerrar sus servicios
+# (PostgreSQL, Samba); si no termina, se fuerza para que kit01 alcance a
+# apagarse con batería. Todo queda en el journal con la etiqueta kit-apagado.
+# Con {{ nut_simulacro }} reciente (menos de {{ nut_simulacro_vigencia }} s)
+# apaga las VMs pero no kit01, y NUT vuelve a OL.
+set -u
+SIMULACRO={{ nut_simulacro }}
+
+log() { logger -t kit-apagado "$*"; echo "$*"; }
+
+simulacro=0
+if [[ -f $SIMULACRO ]] && (( $(date +%s) - $(stat -c %Y "$SIMULACRO") < {{ nut_simulacro_vigencia }} )); then
+  simulacro=1
+fi
+
+apagar() {
+  local vm=$1 estado inicio=$SECONDS fin=$((SECONDS + {{ nut_espera_vm }}))
+  if ! estado=$(virsh -c qemu:///system domstate "$vm" 2>/dev/null); then
+    log "$vm no existe"
+    return
+  fi
+  if [[ $estado != running ]]; then
+    log "$vm ya estaba apagada ($estado)"
+    return
+  fi
+  log "$vm: apagado limpio"
+  virsh -c qemu:///system shutdown "$vm" >/dev/null
+  while ((SECONDS < fin)); do
+    if [[ $(virsh -c qemu:///system domstate "$vm") == "shut off" ]]; then
+      log "$vm apagada en $((SECONDS - inicio)) s"
+      return
+    fi
+    sleep 2
+  done
+  log "$vm no se apagó en {{ nut_espera_vm }} s; apagado forzado"
+  virsh -c qemu:///system destroy "$vm" >/dev/null
+}
+
+if ((simulacro)); then
+  log "Inicio del apagado ordenado (simulacro, kit01 no se apaga)"
+else
+  log "Inicio del apagado ordenado"
+fi
+for vm in {{ nut_orden_vms | join(' ') }}; do
+  apagar "$vm"
+done
+
+if ((simulacro)); then
+  rm -f "$SIMULACRO"
+  # OL ya, antes de reiniciar nada: si upsmon volviera a leer LB ejecutaría
+  # este script otra vez, ya sin simulacro, y apagaría kit01
+  /usr/local/sbin/kit-ups ol >/dev/null
+  # upsmon termina al volver de este script; después se limpian FSD y la marca
+  # de corte de energía
+  if systemd-run --quiet --collect --on-active=15 --unit=nut-fin-simulacro \
+    sh -c 'rm -f /etc/killpower; systemctl restart nut-driver@{{ nut_ups }} nut-server nut-monitor'; then
+    log "Simulacro terminado; kit01 sigue encendido, la UPS en OL y NUT se reinicia en 15 s"
+  else
+    log "Simulacro terminado; la UPS en OL, pero no se pudo programar el reinicio de NUT (hacerlo a mano)"
+  fi
+  exit 0
+fi
+
+log "kit01: apagado"
+systemctl poweroff
