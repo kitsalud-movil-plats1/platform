@@ -46,7 +46,7 @@ sudo systemctl start backup.service    # copia ahora (por ejemplo, antes de un c
 journalctl -u backup -o cat            # qué extrajo, los snapshots y el espacio del disco
 ```
 
-Para consultar o restaurar se monta el disco y se cargan las variables de restic:
+Los objetivos de recuperación y el procedimiento completo de cada escenario están en el plan de respaldo, `docs/respaldo/plan-respaldo.md` (E5). Para consultar o restaurar se monta el disco y se cargan las variables de restic.
 
 ```bash
 sudo -i
@@ -60,7 +60,7 @@ umount /mnt/backup                     # al terminar
 |---|---|
 | Un archivo de `archivos` | `restic restore latest --tag recursos --include /var/lib/kitsalud/backup/clinica01/archivos/<ruta> --target /tmp/r` y copiarlo de vuelta a `/srv/samba/archivos/` de clinica01 con `rsync -aAX` (conserva dueños y ACL) |
 | Una base | `restic dump latest --tag bd /var/lib/kitsalud/backup/clinica01/postgres/<base>.dump > /tmp/<base>.dump`, copiarlo a clinica01 y `docker exec -i dhis2-db-1 pg_restore -U dhis -d <base> --clean --if-exists < /tmp/<base>.dump`. Una sola tabla con `-t <tabla>` |
-| El dominio | `restic dump latest --tag dominio /var/lib/kitsalud/backup/clinica01/dominio/dominio.tar.bz2 > /tmp/dominio.tar.bz2` y en clinica01, con Samba detenido, `samba-tool domain backup restore --backup-file=/tmp/dominio.tar.bz2 --targetdir=<dir> --newservername=dc01` |
+| El dominio | `restic dump latest --tag dominio /var/lib/kitsalud/backup/clinica01/dominio/dominio.tar.bz2 > /tmp/dominio.tar.bz2` y en clinica01, con Samba detenido, `samba-tool domain backup restore --backup-file=/tmp/dominio.tar.bz2 --targetdir=<dir> --newservername=dc02`. Exige un nombre nuevo (con `dc01` falla porque ya está en el backup), así que después se vuelve a registrar `dc01` en el DNS de AD. Si el dominio solo tiene lo que crea Ansible, es más directo aprovisionarlo otra vez con `playbooks/samba.yml` |
 | Una configuración | `restic restore latest --tag config --include <ruta> --target /tmp/r`. Las de las VMs están bajo `/var/lib/kitsalud/backup/<equipo>/etc` o `srv` |
 
 ## Cómo se verifica
