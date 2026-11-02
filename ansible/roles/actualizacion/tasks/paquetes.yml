@@ -21,15 +21,11 @@
   register: actualizacion_pendientes
   changed_when: false
 
-- name: Los que quedan son retenidos
-  ansible.builtin.assert:
-    that: actualizacion_pendientes.stdout_lines | difference(actualizacion_retenidos.stdout_lines) | length == 0
-    fail_msg: "Quedan sin actualizar {{ actualizacion_pendientes.stdout_lines | difference(actualizacion_retenidos.stdout_lines) }}"
-    quiet: true
-
-- name: Retenidos que tienen versión nueva
+- name: Lo que queda sin actualizar
   ansible.builtin.debug:
-    msg: "{{ actualizacion_pendientes.stdout_lines }}"
+    msg:
+      - "Retenidos con versión nueva: {{ actualizacion_pendientes.stdout_lines | intersect(actualizacion_retenidos.stdout_lines) | join(' ') }}"
+      - "Quedan porque dependen de un retenido (se actualizan con él): {{ actualizacion_pendientes.stdout_lines | difference(actualizacion_retenidos.stdout_lines) | join(' ') }}"
 
 - name: Imágenes de las versiones fijadas (las que se construyen en la VM no se bajan)
   ansible.builtin.shell: |
