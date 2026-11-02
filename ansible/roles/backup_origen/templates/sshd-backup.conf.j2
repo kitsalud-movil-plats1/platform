@@ -1,0 +1,13 @@
+# {{ ansible_managed }} (rol backup_origen, platform#11)
+# Backups pull desde {{ backup_origen_desde_equipo }} (F-02). {{ backup_usuario }} solo entra con su llave, desde
+# {{ backup_origen_desde_equipo }}, y solo ejecuta el comando forzado.
+Match User {{ backup_usuario }}
+	AuthorizedKeysFile {{ backup_origen_llaves }}
+	AuthenticationMethods publickey
+	PasswordAuthentication no
+	KbdInteractiveAuthentication no
+	ForceCommand sudo -n {{ backup_origen_comando }}
+	DisableForwarding yes
+	PermitTTY no
+	PermitTunnel no
+	PermitUserRC no

@@ -1,0 +1,13 @@
+# {{ ansible_managed }} (rol backups, platform#11)
+[Unit]
+Description=Backup del kit con restic al disco USB
+After=network-online.target libvirtd.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart={{ backup_script }}
+TimeoutStartSec=6h
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

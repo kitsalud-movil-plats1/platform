@@ -1,0 +1,20 @@
+---
+# Backups pull con restic (R11, D-10, sección 10.6, platform#11). kit01 extrae
+# los datos de cada VM por SSH, con una llave que allá solo ejecuta el comando
+# forzado del rol backup_origen, y los guarda cifrados en el disco USB.
+
+# Una vez por semana, el domingo de madrugada (después de la analítica de
+# DHIS2 de las 2:00). Retención de 4 semanales y 3 mensuales
+backup_cada: "Sun *-*-* 04:00:00"
+backup_retener_semanales: 4
+backup_retener_mensuales: 3
+
+# Usuario de las VMs con el comando forzado (rol backup_origen). Es el usuario
+# backup de Ubuntu, que ya existe sin contraseña
+backup_usuario: backup
+# Llave de kit01, que se genera en kit01 y nunca sale de él
+backup_llave: /etc/kitsalud/backup/id_ed25519
+
+# Configuraciones de kit01, que se respaldan sin pasar por SSH. /etc incluye la
+# raíz de la CA del kit (/etc/kitsalud/ca) y los certificados de /etc/kitsalud/tls
+backup_kit01_rutas: [/etc]

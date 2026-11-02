@@ -28,6 +28,10 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `inventarios/kit/group_vars/all/contenido.yml` | ZIM de la biblioteca y audio y video de Jellyfin (archivo, origen o URL, sha256, título o autor y licencia, y si hay que prepararlo a H.264), y el usuario y la llave de la publicación |
 | `playbooks/publicacion.yml` | Publicación de contenido de clinica01 a comunidad01. Rol `publicacion` en clinica01 (usuario de solo lectura, ZIM de la lista en `contenido/zim`, llave, script y timer) y rol `publicacion_destino` del repositorio `apps` en comunidad01. El timer se activa al final (etiqueta `timer`) |
 | `roles/publicacion/` | Origen de la publicación (ver `clinica01/publicacion/README.md`) |
+| `inventarios/kit/group_vars/all/backups.yml` | Política de los backups (frecuencia, retención, usuario `backup`, llave de kit01 y rutas propias de kit01). El laboratorio lo enlaza |
+| `inventarios/*/group_vars/all/backups-equipos.yml` | UUID del disco de backups, direcciones de kit01 hacia las VMs y qué se extrae de cada equipo (módulos de rsync, bases y dominio). Uno por inventario |
+| `playbooks/backups.yml` | Backups pull con restic. Rol `backups` en kit01 (restic, clave, llave, script y timer) y rol `backup_origen` en las VMs (usuario `backup` con comando forzado y rsync de solo lectura). El timer se activa al final (etiqueta `timer`) |
+| `roles/backups/` y `roles/backup_origen/` | Backups del kit (ver `backups/README.md`) |
 | `inventarios/kit/group_vars/all/dhcp.yml` | Reservas DHCPv4 de las estaciones de administración (`dhcp_reservas`) |
 | `playbooks/dhcp.yml` | Kea DHCPv4, Kea DHCPv6 sin estado y radvd en kit01 (roles `kea_dhcp4`, `kea_dhcp6` y `radvd` del repositorio `network`) |
 | `playbooks/prueba01.yml` | Enciende (`prueba01_estado=encendida`, por defecto) o apaga `prueba01` |

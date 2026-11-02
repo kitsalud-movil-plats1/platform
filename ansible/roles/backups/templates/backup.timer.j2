@@ -1,0 +1,12 @@
+# {{ ansible_managed }} (rol backups, platform#11)
+[Unit]
+Description=Backup semanal del kit ({{ backup_cada }})
+
+[Timer]
+OnCalendar={{ backup_cada }}
+# Si kit01 estaba apagado a esa hora, corre al arrancar
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

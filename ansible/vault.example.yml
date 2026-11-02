@@ -14,3 +14,4 @@ vault_formularios_db_password: ""  # usuario formularios de la base prerregistro
 vault_grafana_admin_password: ""   # cuenta local admin de Grafana, respaldo sin AD (observability#2)
 vault_consultas_db_password: ""    # usuario consultas de la base prerregistro, lee y marca atendido (apps#7)
 vault_jellyfin_admin_password: ""  # cuenta admin de Jellyfin, solo desde la Interna y NetBird (apps#5)
+vault_restic_password: ""         # repositorio restic del disco USB, solo en kit01 (platform#11)

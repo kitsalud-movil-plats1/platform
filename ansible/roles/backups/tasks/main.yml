@@ -1,0 +1,82 @@
+---
+- name: restic con versión fija
+  ansible.builtin.apt:
+    name: "restic={{ version_restic }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Retener restic
+  ansible.builtin.dpkg_selections:
+    name: restic
+    selection: hold
+
+- name: Carpetas de la configuración, el área temporal, el montaje y la caché, solo de root
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  loop:
+    - "{{ backup_dir }}"
+    - "{{ backup_staging }}"
+    - "{{ backup_montaje }}"
+    - "{{ backup_cache }}"
+
+# Las VMs nunca la tienen (R11)
+- name: Clave del repositorio desde el vault
+  ansible.builtin.copy:
+    content: "{{ vault_restic_password }}"
+    dest: "{{ backup_clave }}"
+    owner: root
+    group: root
+    mode: "0400"
+  no_log: true
+
+# Las VMs la aceptan solo para el comando forzado (rol backup_origen)
+- name: Llave de los backups
+  community.crypto.openssh_keypair:
+    path: "{{ backup_llave }}"
+    type: ed25519
+    comment: "backup@{{ inventory_hostname }}"
+    owner: root
+    group: root
+    mode: "0600"
+
+# Solo se acepta la llave de host de cada VM, con su nombre y sus direcciones
+- name: Llaves de host de las VMs
+  ansible.builtin.slurp:
+    src: /etc/ssh/ssh_host_ed25519_key.pub
+  delegate_to: "{{ item }}"
+  loop: "{{ backup_equipos.keys() | list }}"
+  register: backup_llaves_host
+
+- name: known_hosts con las VMs
+  ansible.builtin.copy:
+    content: |
+      {% for r in backup_llaves_host.results %}
+      {{ ([r.item] + backup_equipos[r.item].direcciones) | join(',') }} {{ (r.content | b64decode).split()[:2] | join(' ') }}
+      {% endfor %}
+    dest: "{{ backup_dir }}/known_hosts"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Script del backup
+  ansible.builtin.template:
+    src: backup-kit.j2
+    dest: "{{ backup_script }}"
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Servicio y timer del backup
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: [backup.service, backup.timer]
+  notify: Recargar systemd

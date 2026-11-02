@@ -11,3 +11,4 @@ version_blackbox_exporter: 0.24.0-2ubuntu0.3
 version_nginx: 1.24.0-2ubuntu7.19
 version_grafana: 13.2.4
 version_rsyslog: 8.2312.0-3ubuntu9.4
+version_restic: 0.16.4-2ubuntu0.24.04.3

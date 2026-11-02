@@ -1,0 +1,73 @@
+---
+# El usuario backup de Ubuntu ya existe, sin contraseña y con nologin. Necesita
+# una shell válida para que sshd ejecute el comando forzado; con el comando
+# forzado y sin contraseña no puede abrir una sesión
+- name: Shell del usuario {{ backup_usuario }} para el comando forzado
+  ansible.builtin.user:
+    name: "{{ backup_usuario }}"
+    system: true
+    shell: /bin/sh
+    create_home: false
+
+- name: Carpetas de la configuración y de la llave, de root
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - "{{ backup_origen_dir }}"
+    - "{{ backup_origen_llaves | dirname }}"
+
+- name: Configuración del demonio de rsync, de solo lectura
+  ansible.builtin.template:
+    src: rsyncd.conf.j2
+    dest: "{{ backup_origen_dir }}/rsyncd.conf"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Comando forzado
+  ansible.builtin.template:
+    src: backup-extraer.j2
+    dest: "{{ backup_origen_comando }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: sudo solo para el comando forzado
+  ansible.builtin.template:
+    src: sudoers-backup.j2
+    dest: /etc/sudoers.d/backup
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+
+# La llave pública se lee en kit01; la privada nunca sale de allá
+- name: Llave pública de {{ backup_origen_desde_equipo }}
+  ansible.builtin.slurp:
+    src: "{{ backup_llave }}.pub"
+  delegate_to: "{{ backup_origen_desde_equipo }}"
+  register: backup_origen_llave
+
+# Fuera de la carpeta del usuario y de root, así el usuario no puede cambiarla
+- name: Llave autorizada solo desde {{ backup_origen_desde_equipo }} y solo para el comando forzado
+  ansible.builtin.copy:
+    content: >-
+      command="sudo -n {{ backup_origen_comando }}",restrict,from="{{ backup_desde | join(',') }}"
+      {{ backup_origen_llave.content | b64decode | trim }}
+    dest: "{{ backup_origen_llaves }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: sshd para los backups
+  ansible.builtin.template:
+    src: sshd-backup.conf.j2
+    dest: /etc/ssh/sshd_config.d/20-backup.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Recargar sshd
