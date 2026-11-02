@@ -41,6 +41,11 @@
   changed_when: false
   when: inventory_hostname in groups['vms']
 
+- name: Proyectos de Docker revisados
+  ansible.builtin.debug:
+    msg: "{{ actualizacion_pull.stdout_lines }}"
+  when: inventory_hostname in groups['vms']
+
 - name: ¿Hace falta reiniciar?
   ansible.builtin.stat:
     path: /var/run/reboot-required
