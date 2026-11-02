@@ -1,6 +1,8 @@
 ---
 # Llave temporal de kit01 para entrar a una VM como el usuario de
-# administración, solo desde kit01 y sin terminal ni túneles. vm_nombre, estado
+# administración, solo desde kit01 y sin terminal ni túneles. kit01 sale hacia
+# las VMs desde el gateway de br-srv en IPv4 y desde la dirección de servicios
+# en IPv6, así que se aceptan las dos. vm_nombre, estado
 - name: Llave temporal en kit01
   ansible.builtin.command: ssh-keygen -q -t ed25519 -N '' -C actualizacion-kit01 -f {{ actualizacion_llave }}
   args:
@@ -17,7 +19,8 @@
   ansible.posix.authorized_key:
     user: "{{ admin_usuario }}"
     key: "{{ actualizacion_publica.content | b64decode }}"
-    key_options: 'restrict,from="{{ servicios_kit01.ipv4 }},{{ servicios_kit01.ipv6 }}"'
+    key_options: >-
+      restrict,from="{{ [redes.servidores.gw4, servicios_kit01.ipv4, redes.servidores.gw6, servicios_kit01.ipv6] | join(',') }}"
     state: present
   delegate_to: "{{ vm_nombre }}"
   when: estado == 'present'
@@ -26,6 +29,13 @@
   ansible.builtin.lineinfile:
     path: "/home/{{ admin_usuario }}/.ssh/authorized_keys"
     regexp: 'actualizacion-kit01$'
+    state: absent
+  delegate_to: "{{ vm_nombre }}"
+  when: estado == 'absent'
+
+- name: Vaciar la carpeta de paso en {{ vm_nombre }}
+  ansible.builtin.file:
+    path: "{{ actualizacion_paso_vm }}"
     state: absent
   delegate_to: "{{ vm_nombre }}"
   when: estado == 'absent'
