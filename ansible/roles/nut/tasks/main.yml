@@ -69,7 +69,15 @@
     owner: root
     group: root
     mode: "0644"
-  notify: Recargar systemd
+  register: nut_unidad_inicial
+
+# Antes que el driver: sin el archivo de estado, dummy-ups no arranca
+- name: UPS en OL antes de arrancar el driver
+  ansible.builtin.systemd_service:
+    name: kit-ups-inicial
+    state: started
+    enabled: true
+    daemon_reload: "{{ nut_unidad_inicial is changed }}"
 
 - name: Scripts para simular la UPS y para el apagado ordenado
   ansible.builtin.template:
@@ -89,7 +97,6 @@
     state: started
     enabled: true
   loop:
-    - kit-ups-inicial
     - "nut-driver@{{ nut_ups }}"
     - nut-server
     - nut-monitor
