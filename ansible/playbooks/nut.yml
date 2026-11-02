@@ -1,0 +1,7 @@
+---
+# UPS lógica con NUT y apagado ordenado del kit (platform#13, C-01, sección 13)
+- name: NUT en kit01
+  hosts: kit
+  become: true
+  roles:
+    - nut

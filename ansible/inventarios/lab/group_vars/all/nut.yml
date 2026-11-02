@@ -1,0 +1,5 @@
+---
+# UPS lógica en el laboratorio virtual (platform#13). Los dominios de prueba de
+# kitlab-kit01 no tienen sistema, no responden al apagado y se fuerzan pronto
+nut_orden_vms: [comunidad01, clinica01]
+nut_espera_vm: 20

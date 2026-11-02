@@ -1,0 +1,10 @@
+# {{ ansible_managed }} (rol nut, platform#13)
+# UPS lógica (C-01). Con una UPS USB real solo cambia el driver (usbhid-ups) y
+# el puerto (auto); el resto del procedimiento es igual (sección 13)
+maxretry = 3
+
+[{{ nut_ups }}]
+  driver = dummy-ups
+  port = {{ nut_estado }}
+  mode = dummy-once
+  desc = "UPS logica del kit"
