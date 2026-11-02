@@ -1,0 +1,15 @@
+---
+# Nombre de la instantánea de las VMs antes de actualizar (una por día)
+actualizacion_instantanea: "antes-{{ lookup('pipe', 'date +%Y%m%d') }}"
+# Segundos para que una VM se apague sola antes de fallar (no se fuerza)
+actualizacion_apagado_espera: 180
+# Segundos para que vuelvan las sondas de una VM después de encenderla
+actualizacion_sondas_espera: 300
+# Disco USB de backups (se monta como lo hace el backup) e imágenes Docker en él,
+# una carpeta por VM
+actualizacion_montaje: /mnt/backup
+actualizacion_imagenes_dir: "{{ actualizacion_montaje }}/imagenes"
+# Carpeta de paso en las VMs (en el disco de datos)
+actualizacion_paso_vm: /srv/imagenes-paso
+# Llave temporal de kit01 hacia las VMs para mover las imágenes; se borra al terminar
+actualizacion_llave: /run/kitsalud-actualizacion/llave

@@ -1,0 +1,16 @@
+---
+# Monta o desmonta el disco USB de backups como lo hace el backup. estado
+- name: Montar el disco USB de backups
+  ansible.builtin.shell: |
+    mountpoint -q {{ actualizacion_montaje }} && { echo "{{ actualizacion_montaje }} ya está montado" >&2; exit 1; }
+    mkdir -p {{ actualizacion_montaje }}
+    mount -o noatime,nodev,nosuid,noexec UUID={{ backup_disco_uuid }} {{ actualizacion_montaje }}
+  changed_when: true
+  when: estado == 'present'
+
+- name: Desmontar el disco USB de backups
+  ansible.builtin.shell: |
+    mountpoint -q {{ actualizacion_montaje }} || exit 0
+    sync && umount {{ actualizacion_montaje }}
+  changed_when: true
+  when: estado == 'absent'

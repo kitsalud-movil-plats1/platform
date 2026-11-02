@@ -1,0 +1,31 @@
+---
+# Llave temporal de kit01 para entrar a una VM como el usuario de
+# administración, solo desde kit01 y sin terminal ni túneles. vm_nombre, estado
+- name: Llave temporal en kit01
+  ansible.builtin.command: ssh-keygen -q -t ed25519 -N '' -C actualizacion-kit01 -f {{ actualizacion_llave }}
+  args:
+    creates: "{{ actualizacion_llave }}"
+  when: estado == 'present'
+
+- name: Llave pública
+  ansible.builtin.slurp:
+    src: "{{ actualizacion_llave }}.pub"
+  register: actualizacion_publica
+  when: estado == 'present'
+
+- name: Autorizar la llave en {{ vm_nombre }}
+  ansible.posix.authorized_key:
+    user: "{{ admin_usuario }}"
+    key: "{{ actualizacion_publica.content | b64decode }}"
+    key_options: 'restrict,from="{{ servicios_kit01.ipv4 }},{{ servicios_kit01.ipv6 }}"'
+    state: present
+  delegate_to: "{{ vm_nombre }}"
+  when: estado == 'present'
+
+- name: Quitar la llave de {{ vm_nombre }}
+  ansible.builtin.lineinfile:
+    path: "/home/{{ admin_usuario }}/.ssh/authorized_keys"
+    regexp: 'actualizacion-kit01$'
+    state: absent
+  delegate_to: "{{ vm_nombre }}"
+  when: estado == 'absent'

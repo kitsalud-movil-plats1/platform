@@ -1,0 +1,11 @@
+---
+# Vuelve una VM a su instantánea. vm_nombre
+- name: Apagar
+  ansible.builtin.include_tasks: apagar_vm.yml
+
+- name: Volver a {{ actualizacion_instantanea }}
+  ansible.builtin.command: virsh -c qemu:///system snapshot-revert {{ vm_nombre }} {{ actualizacion_instantanea }}
+  changed_when: true
+
+- name: Encender
+  ansible.builtin.include_tasks: encender_vm.yml

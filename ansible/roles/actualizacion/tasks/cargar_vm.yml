@@ -1,0 +1,48 @@
+---
+# Carga en una VM una imagen guardada en el disco USB, sin Internet. Se ejecuta
+# en kit01 con el disco montado. vm_nombre, imagen
+- name: Archivo de {{ imagen }}
+  ansible.builtin.set_fact:
+    actualizacion_archivo: "{{ imagen | regex_replace('[/:]', '_') }}.tar.gz"
+
+- name: Comprobar el archivo en el disco
+  ansible.builtin.shell: |
+    cd {{ actualizacion_imagenes_dir }}/{{ vm_nombre }}
+    grep " ./{{ actualizacion_archivo }}$" SHA256SUMS | sha256sum -c --quiet
+  changed_when: false
+
+- name: Carpeta de paso en {{ vm_nombre }}
+  ansible.builtin.file:
+    path: "{{ actualizacion_paso_vm }}"
+    state: directory
+    owner: "{{ admin_usuario }}"
+    mode: "0700"
+  delegate_to: "{{ vm_nombre }}"
+
+- name: Copiar {{ actualizacion_archivo }} a {{ vm_nombre }}
+  ansible.builtin.command: >-
+    rsync -t -e "ssh -i {{ actualizacion_llave }} -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/run/kitsalud-actualizacion/known_hosts"
+    {{ actualizacion_imagenes_dir }}/{{ vm_nombre }}/{{ actualizacion_archivo }}
+    {{ admin_usuario }}@{{ hostvars[vm_nombre].ansible_host }}:{{ actualizacion_paso_vm }}/
+  changed_when: true
+
+- name: docker load en {{ vm_nombre }}
+  ansible.builtin.shell: |
+    set -eo pipefail
+    gunzip -c {{ actualizacion_paso_vm }}/{{ actualizacion_archivo }} | docker load
+    docker image inspect --format '{% raw %}{{.Id}}{% endraw %}' {{ imagen }}
+  args:
+    executable: /bin/bash
+  register: actualizacion_load
+  changed_when: true
+  delegate_to: "{{ vm_nombre }}"
+
+- name: Vaciar la carpeta de paso en {{ vm_nombre }}
+  ansible.builtin.file:
+    path: "{{ actualizacion_paso_vm }}"
+    state: absent
+  delegate_to: "{{ vm_nombre }}"
+
+- name: Imagen cargada
+  ansible.builtin.debug:
+    msg: "{{ actualizacion_load.stdout_lines }}"
