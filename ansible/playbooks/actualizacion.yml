@@ -1,0 +1,134 @@
+---
+# Actualización en base, con Internet (docs/operacion/actualizacion.md, R-05).
+# Cada paso se ejecuta solo cuando se pide con -e paso=<paso>:
+#   instantanea     apaga cada VM, le saca una instantánea y la enciende
+#   paquetes        apt en las VMs (sin los retenidos), reinicio si hace falta y sondas en verde
+#   paquetes-kit01  apt en kit01 (sin los retenidos), sin reiniciar
+#   imagenes        docker save de las imágenes de las VMs al disco USB
+#   cargar          docker load de una imagen desde el disco USB (-e vms=<vm> -e imagen=<imagen:versión>)
+#   revertir        vuelve cada VM a su instantánea
+#   borrar          borra las instantáneas
+# Con -e vms=<vm> se limita a una VM (por defecto comunidad01 y después
+# clinica01) y con -e actualizacion_instantanea=<nombre> se elige otra instantánea.
+- name: Instantáneas de las VMs
+  hosts: kit
+  become: true
+  gather_facts: false
+  vars:
+    vms_actualizar: "{{ (vms | default('comunidad01,clinica01')).split(',') }}"
+  tasks:
+    - name: Instantánea, revertir o borrar
+      ansible.builtin.include_role:
+        name: actualizacion
+        tasks_from: "{{ paso }}"
+      loop: "{{ vms_actualizar }}"
+      loop_control:
+        loop_var: vm_nombre
+      when: paso | default('') in ['instantanea', 'revertir', 'borrar']
+
+- name: Paquetes de las VMs, de a una
+  hosts: "{{ vms | default('comunidad01,clinica01') }}"
+  become: true
+  gather_facts: false
+  serial: 1
+  tasks:
+    - name: Paquetes
+      when: paso | default('') == 'paquetes'
+      block:
+        - name: Actualizar
+          ansible.builtin.include_role:
+            name: actualizacion
+            tasks_from: paquetes
+
+        - name: Sondas en verde
+          ansible.builtin.include_role:
+            name: actualizacion
+            tasks_from: sondas_vm
+            apply:
+              delegate_to: kit01
+          vars:
+            vm_nombre: "{{ inventory_hostname }}"
+
+- name: Paquetes de kit01
+  hosts: kit
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Actualizar
+      ansible.builtin.include_role:
+        name: actualizacion
+        tasks_from: paquetes
+      when: paso | default('') == 'paquetes-kit01'
+
+- name: Imágenes Docker en el disco USB
+  hosts: kit
+  become: true
+  gather_facts: false
+  vars:
+    vms_actualizar: "{{ (vms | default('comunidad01,clinica01')).split(',') }}"
+  tasks:
+    - name: Guardar o cargar imágenes
+      when: paso | default('') in ['imagenes', 'cargar']
+      block:
+        - name: Carpeta de la llave temporal
+          ansible.builtin.file:
+            path: /run/kitsalud-actualizacion
+            state: directory
+            mode: "0700"
+
+        - name: Montar el disco
+          ansible.builtin.include_role:
+            name: actualizacion
+            tasks_from: montar
+          vars:
+            estado: present
+
+        - name: Llave temporal en las VMs
+          ansible.builtin.include_role:
+            name: actualizacion
+            tasks_from: llave
+          vars:
+            estado: present
+          loop: "{{ vms_actualizar }}"
+          loop_control:
+            loop_var: vm_nombre
+
+        - name: Guardar las imágenes
+          ansible.builtin.include_role:
+            name: actualizacion
+            tasks_from: imagenes_vm
+          loop: "{{ vms_actualizar }}"
+          loop_control:
+            loop_var: vm_nombre
+          when: paso == 'imagenes'
+
+        - name: Cargar una imagen
+          ansible.builtin.include_role:
+            name: actualizacion
+            tasks_from: cargar_vm
+          vars:
+            vm_nombre: "{{ vms_actualizar | first }}"
+          when: paso == 'cargar'
+
+      always:
+        - name: Quitar la llave temporal de las VMs
+          ansible.builtin.include_role:
+            name: actualizacion
+            tasks_from: llave
+          vars:
+            estado: absent
+          loop: "{{ vms_actualizar }}"
+          loop_control:
+            loop_var: vm_nombre
+
+        - name: Borrar la llave temporal de kit01
+          ansible.builtin.file:
+            path: /run/kitsalud-actualizacion
+            state: absent
+
+        - name: Desmontar el disco
+          ansible.builtin.include_role:
+            name: actualizacion
+            tasks_from: montar
+          vars:
+            estado: absent

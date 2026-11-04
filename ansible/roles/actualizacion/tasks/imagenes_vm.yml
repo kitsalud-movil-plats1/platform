@@ -1,0 +1,54 @@
+---
+# Guarda en el disco USB todas las imágenes de una VM, comprimidas, con su
+# sha256 y la lista de imágenes. Se ejecuta en kit01 con el disco montado. vm_nombre
+- name: Carpeta de paso en {{ vm_nombre }}
+  ansible.builtin.file:
+    path: "{{ actualizacion_paso_vm }}"
+    state: directory
+    owner: "{{ admin_usuario }}"
+    mode: "0700"
+  delegate_to: "{{ vm_nombre }}"
+
+- name: docker save de cada imagen de {{ vm_nombre }}
+  ansible.builtin.shell: |
+    set -eo pipefail
+    cd {{ actualizacion_paso_vm }}
+    rm -f ./*.tar.gz SHA256SUMS imagenes.txt
+    docker images --format '{% raw %}{{.Repository}}:{{.Tag}} {{.ID}}{% endraw %}' | grep -v '<none>' | sort > imagenes.txt
+    while read -r imagen id; do
+      archivo=$(echo "$imagen" | tr '/:' '__').tar.gz
+      docker save "$imagen" | gzip -1 > "$archivo"
+    done < imagenes.txt
+    sha256sum ./*.tar.gz imagenes.txt > SHA256SUMS
+    chown {{ admin_usuario }} ./*
+    du -sh . | cut -f1
+  args:
+    executable: /bin/bash
+  register: actualizacion_save
+  changed_when: true
+  delegate_to: "{{ vm_nombre }}"
+
+- name: Copiar a {{ actualizacion_imagenes_dir }}/{{ vm_nombre }}
+  ansible.builtin.shell: |
+    set -e
+    mkdir -p {{ actualizacion_imagenes_dir }}/{{ vm_nombre }}
+    rsync -rt --delete -e "ssh -i {{ actualizacion_llave }} -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/run/kitsalud-actualizacion/known_hosts" \
+      {{ admin_usuario }}@{{ hostvars[vm_nombre].ansible_host }}:{{ actualizacion_paso_vm }}/ {{ actualizacion_imagenes_dir }}/{{ vm_nombre }}/
+    cd {{ actualizacion_imagenes_dir }}/{{ vm_nombre }} && sha256sum -c --quiet SHA256SUMS && echo "sha256 bien"
+  register: actualizacion_copia
+  changed_when: true
+
+- name: Vaciar la carpeta de paso en {{ vm_nombre }}
+  ansible.builtin.file:
+    path: "{{ actualizacion_paso_vm }}"
+    state: absent
+  delegate_to: "{{ vm_nombre }}"
+
+- name: Imágenes de {{ vm_nombre }} en el disco
+  ansible.builtin.command: cat {{ actualizacion_imagenes_dir }}/{{ vm_nombre }}/imagenes.txt
+  register: actualizacion_lista_imagenes
+  changed_when: false
+
+- name: Resumen de {{ vm_nombre }}
+  ansible.builtin.debug:
+    msg: "{{ actualizacion_lista_imagenes.stdout_lines + [actualizacion_save.stdout_lines | last + ' comprimidas', actualizacion_copia.stdout_lines | last] }}"

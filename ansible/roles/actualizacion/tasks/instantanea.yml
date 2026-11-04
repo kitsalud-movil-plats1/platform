@@ -1,0 +1,23 @@
+---
+# Instantánea interna de los discos de una VM, con la VM apagada para que la
+# base de datos y el directorio queden consistentes. vm_nombre
+- name: Instantánea existente de {{ vm_nombre }}
+  ansible.builtin.command: virsh -c qemu:///system snapshot-list {{ vm_nombre }} --name
+  register: actualizacion_lista
+  changed_when: false
+
+- name: Instantánea {{ actualizacion_instantanea }} de {{ vm_nombre }}
+  when: actualizacion_instantanea not in actualizacion_lista.stdout_lines
+  block:
+    - name: Apagar
+      ansible.builtin.include_tasks: apagar_vm.yml
+
+    - name: Crear la instantánea
+      ansible.builtin.command: >-
+        virsh -c qemu:///system snapshot-create-as {{ vm_nombre }} {{ actualizacion_instantanea }}
+        --description "Antes de actualizar" --atomic
+      changed_when: true
+
+  always:
+    - name: Encender
+      ansible.builtin.include_tasks: encender_vm.yml

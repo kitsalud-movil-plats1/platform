@@ -1,0 +1,11 @@
+---
+# Borra la instantánea de una VM, si existe. vm_nombre
+- name: Instantáneas de {{ vm_nombre }}
+  ansible.builtin.command: virsh -c qemu:///system snapshot-list {{ vm_nombre }} --name
+  register: actualizacion_lista
+  changed_when: false
+
+- name: Borrar {{ actualizacion_instantanea }} de {{ vm_nombre }}
+  ansible.builtin.command: virsh -c qemu:///system snapshot-delete {{ vm_nombre }} {{ actualizacion_instantanea }}
+  when: actualizacion_instantanea in actualizacion_lista.stdout_lines
+  changed_when: true

@@ -1,0 +1,20 @@
+---
+# Espera que una VM vigilada por Prometheus no tenga ninguna sonda en rojo. Se
+# ejecuta en kit01. vm_nombre
+- name: Esperar que las sondas de {{ vm_nombre }} estén en verde
+  ansible.builtin.shell: |
+    for i in $(seq 1 {{ (actualizacion_sondas_espera / 5) | int }}); do
+      n=$(curl -s 127.0.0.1:9090/api/v1/query --data-urlencode \
+        'query=count((probe_success{equipo="{{ vm_nombre }}"} or up{equipo="{{ vm_nombre }}"}) == 0) or vector(0)' |
+        python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["result"][0]["value"][1])')
+      [ "$n" = 0 ] && { echo "en verde a los $((i * 5)) s"; exit 0; }
+      sleep 5
+    done
+    echo "{{ vm_nombre }} sigue con $n sondas en rojo" >&2
+    exit 1
+  register: actualizacion_sondas
+  changed_when: false
+
+- name: Sondas de {{ vm_nombre }}
+  ansible.builtin.debug:
+    msg: "{{ actualizacion_sondas.stdout }}"

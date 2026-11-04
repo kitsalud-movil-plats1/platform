@@ -1,0 +1,53 @@
+---
+# Actualiza los paquetes de un equipo sin tocar los retenidos (apt-mark hold).
+# En las VMs reinicia si hace falta y baja las imágenes de las versiones fijadas
+# (no cambia ninguna). En kit01 no reinicia: el kernel nuevo espera a que alguien
+# esté en el sitio.
+- name: Paquetes retenidos
+  ansible.builtin.command: apt-mark showhold
+  register: actualizacion_retenidos
+  changed_when: false
+
+- name: Actualizar los paquetes
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: safe
+  environment:
+    NEEDRESTART_MODE: a
+  register: actualizacion_apt
+
+- name: Paquetes que quedan sin actualizar
+  ansible.builtin.shell: apt list --upgradable 2>/dev/null | grep upgradable | cut -d/ -f1
+  register: actualizacion_pendientes
+  changed_when: false
+
+- name: Lo que queda sin actualizar
+  ansible.builtin.debug:
+    msg:
+      - "Retenidos con versión nueva: {{ actualizacion_pendientes.stdout_lines | intersect(actualizacion_retenidos.stdout_lines) | join(' ') }}"
+      - "Quedan porque dependen de un retenido (se actualizan con él): {{ actualizacion_pendientes.stdout_lines | difference(actualizacion_retenidos.stdout_lines) | join(' ') }}"
+
+- name: Imágenes de las versiones fijadas (las que se construyen en la VM no se bajan)
+  ansible.builtin.shell: |
+    docker compose ls -q | while read -r p; do
+      d=$(docker compose ls --format json | python3 -c "import json,sys; print([x['ConfigFiles'] for x in json.load(sys.stdin) if x['Name'] == '$p'][0])")
+      docker compose -f "$d" pull --ignore-buildable -q && echo "$p sin cambios de versión"
+    done
+  register: actualizacion_pull
+  changed_when: false
+  when: inventory_hostname in groups['vms']
+
+- name: Proyectos de Docker revisados
+  ansible.builtin.debug:
+    msg: "{{ actualizacion_pull.stdout_lines }}"
+  when: inventory_hostname in groups['vms']
+
+- name: ¿Hace falta reiniciar?
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: actualizacion_reinicio
+
+- name: Reiniciar la VM
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+  when: actualizacion_reinicio.stat.exists and inventory_hostname in groups['vms']

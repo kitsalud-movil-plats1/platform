@@ -1,0 +1,14 @@
+---
+# Apaga una VM por ACPI y espera a que se detenga, sin forzarla. vm_nombre
+- name: Apagar {{ vm_nombre }}
+  ansible.builtin.shell: |
+    set -e
+    virsh -c qemu:///system domstate {{ vm_nombre }} | grep -qx 'shut off' && exit 0
+    virsh -c qemu:///system shutdown {{ vm_nombre }} >/dev/null
+    for i in $(seq 1 {{ actualizacion_apagado_espera }}); do
+      virsh -c qemu:///system domstate {{ vm_nombre }} | grep -qx 'shut off' && exit 0
+      sleep 1
+    done
+    echo "{{ vm_nombre }} no se apagó en {{ actualizacion_apagado_espera }} s" >&2
+    exit 1
+  changed_when: true

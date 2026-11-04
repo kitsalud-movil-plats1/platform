@@ -1,0 +1,19 @@
+---
+# Enciende una VM y espera su SSH y, si Prometheus la vigila, que no le quede
+# ninguna sonda en rojo. vm_nombre
+- name: Encender {{ vm_nombre }}
+  ansible.builtin.shell: |
+    virsh -c qemu:///system domstate {{ vm_nombre }} | grep -qx running && exit 0
+    virsh -c qemu:///system start {{ vm_nombre }}
+  changed_when: true
+
+- name: Esperar el SSH de {{ vm_nombre }}
+  ansible.builtin.wait_for:
+    host: "{{ 'fe80::5054:ff:fe40:50%br-com' if vm_nombre == 'prueba01' else hostvars[vm_nombre].ansible_host }}"
+    port: 22
+    search_regex: OpenSSH
+    timeout: 300
+
+- name: Sondas de {{ vm_nombre }}
+  ansible.builtin.include_tasks: sondas_vm.yml
+  when: vm_nombre in groups['vms']
