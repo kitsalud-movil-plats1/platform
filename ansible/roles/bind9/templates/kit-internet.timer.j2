@@ -1,0 +1,11 @@
+# {{ ansible_managed }} (rol bind9, network#9)
+[Unit]
+Description=Revisa la salida a Internet cada {{ bind9_sin_internet_intervalo }}
+
+[Timer]
+OnBootSec={{ bind9_sin_internet_intervalo }}
+OnUnitActiveSec={{ bind9_sin_internet_intervalo }}
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

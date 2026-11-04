@@ -1,0 +1,23 @@
+; {{ ansible_managed }} (rol bind9, network#9)
+; Zona RPZ {{ 'sin' if sin_internet else 'con' }} Internet. kit-internet copia esta variante a
+; {{ bind9_sin_internet_activa }} cuando cambia la salida a Internet.
+$TTL {{ bind9_sin_internet_ttl }}
+@ IN SOA localhost. root.localhost. {{ 2 if sin_internet else 1 }} 3600 600 86400 {{ bind9_sin_internet_ttl }}
+@ IN NS localhost.
+{% if sin_internet %}
+
+; La Interna, los servidores y kit01 siguen igual
+{% for p in bind9_sin_internet_excluidos %}
+{{ p | rpz_cliente }}.rpz-client-ip CNAME rpz-passthru.
+{% endfor %}
+
+; Las zonas del kit responden como siempre
+{% for z in [dns_zona, dns_zona_inversa4, dns_zona_inversa6] %}
+{{ z }} CNAME rpz-passthru.
+*.{{ z }} CNAME rpz-passthru.
+{% endfor %}
+
+; Todo lo demás lleva al portal
+* A {{ bind9_sin_internet_portal4 }}
+* AAAA {{ bind9_sin_internet_portal6 }}
+{% endif %}

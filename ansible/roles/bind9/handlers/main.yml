@@ -10,3 +10,7 @@
     name: named
     state: reloaded
   listen: Recargar named
+
+- name: Recargar systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
