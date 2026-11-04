@@ -1,10 +1,11 @@
 # {{ ansible_managed }} (rol comun, R12)
 {% if comun_rsyslog_archivos %}
 # Archivos que un servicio escribe por su cuenta; entran con su etiqueta y se
-# reenvían como el resto
+# reenvían como el resto. reopenOnTruncate vuelve al inicio cuando la rotación
+# usa copytruncate, que deja el archivo en 0 bytes con el mismo inodo
 module(load="imfile")
 {% for a in comun_rsyslog_archivos %}
-input(type="imfile" file="{{ a.ruta }}" tag="{{ a.etiqueta }}:" facility="{{ a.facilidad | default('user') }}" severity="notice")
+input(type="imfile" file="{{ a.ruta }}" tag="{{ a.etiqueta }}:" facility="{{ a.facilidad | default('user') }}" severity="notice" reopenOnTruncate="on")
 {% endfor %}
 
 {% endif %}
