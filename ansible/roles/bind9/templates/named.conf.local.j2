@@ -15,3 +15,11 @@ zone "{{ dns_zona_inversa6 }}" {
 	type primary;
 	file "/etc/bind/zonas/db.{{ dns_zona_inversa6 }}";
 };
+
+// Zona RPZ del portal sin Internet (network#9). La escribe kit-internet
+zone "{{ bind9_sin_internet_zona }}" {
+	type primary;
+	file "{{ bind9_sin_internet_activa }}";
+	allow-query { none; };
+	allow-transfer { none; };
+};

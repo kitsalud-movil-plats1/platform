@@ -80,8 +80,56 @@
     - { zona: "{{ dns_zona_inversa6 }}", v6: true }
   notify: Recargar named
 
+# Sin Internet (network#9): las dos variantes de la zona RPZ, y la activa
+# empieza con Internet. Desde ahí la cambia kit-internet, no Ansible
+- name: Zona RPZ con y sin Internet
+  ansible.builtin.template:
+    src: sin-internet.rpz.j2
+    dest: "/etc/bind/zonas/{{ item }}-internet.rpz"
+    owner: root
+    group: bind
+    mode: "0644"
+    validate: "named-checkzone {{ bind9_sin_internet_zona }} %s"
+  vars:
+    sin_internet: "{{ item == 'sin' }}"
+  loop: [con, sin]
+
+- name: Zona RPZ activa al empezar
+  ansible.builtin.copy:
+    src: /etc/bind/zonas/con-internet.rpz
+    dest: "{{ bind9_sin_internet_activa }}"
+    remote_src: true
+    force: false
+    owner: bind
+    group: bind
+    mode: "0644"
+  notify: Recargar named
+
+- name: Revisión de la salida a Internet
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "{{ item.modo }}"
+  loop:
+    - { src: kit-internet.j2, dest: /usr/local/sbin/kit-internet, modo: "0755" }
+    - { src: kit-internet.service.j2, dest: /etc/systemd/system/kit-internet.service, modo: "0644" }
+    - { src: kit-internet.timer.j2, dest: /etc/systemd/system/kit-internet.timer, modo: "0644" }
+  notify: Recargar systemd
+
 - name: named activo al arrancar
   ansible.builtin.systemd_service:
     name: named
+    enabled: true
+    state: started
+
+# El timer arranca cuando named ya tiene la zona RPZ
+- name: Aplicar los cambios pendientes de named y systemd
+  ansible.builtin.meta: flush_handlers
+
+- name: Timer de la revisión de Internet
+  ansible.builtin.systemd_service:
+    name: kit-internet.timer
     enabled: true
     state: started

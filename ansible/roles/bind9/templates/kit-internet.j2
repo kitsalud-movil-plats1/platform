@@ -1,0 +1,39 @@
+#!/bin/bash
+# {{ ansible_managed }} (rol bind9, network#9)
+# Revisa la salida a Internet preguntando a los reenviadores de BIND9. Si no
+# responde ninguno {{ bind9_sin_internet_fallos }} veces seguidas, activa la zona RPZ que manda a la
+# Comunidad al portal; con la primera respuesta, la vacía. Solo recarga named
+# cuando cambia la zona activa.
+set -u
+ESTADO=/run/kit-internet
+ACTIVA={{ bind9_sin_internet_activa }}
+mkdir -p "$ESTADO"
+
+hay_internet() {
+  for r in {{ bind9_sin_internet_pruebas | join(' ') }}; do
+    dig +time=2 +tries=1 @"$r" . NS 2>/dev/null | grep -q 'status: NOERROR' && return 0
+  done
+  return 1
+}
+
+fallos=$(cat "$ESTADO/fallos" 2>/dev/null || echo 0)
+if hay_internet; then
+  fallos=0
+  modo=con
+else
+  fallos=$((fallos + 1))
+  modo=$(cat "$ESTADO/modo" 2>/dev/null || echo con)
+  [ "$fallos" -ge {{ bind9_sin_internet_fallos }} ] && modo=sin
+fi
+echo "$fallos" > "$ESTADO/fallos"
+echo "$modo" > "$ESTADO/modo"
+
+if ! cmp -s "/etc/bind/zonas/$modo-internet.rpz" "$ACTIVA"; then
+  install -o bind -g bind -m 0644 "/etc/bind/zonas/$modo-internet.rpz" "$ACTIVA"
+  rndc reload {{ bind9_sin_internet_zona }} >/dev/null
+  if [ "$modo" = sin ]; then
+    logger -t kit-internet "Sin Internet: la Comunidad va al portal con cualquier nombre"
+  else
+    logger -t kit-internet "Con Internet: la Comunidad resuelve los nombres normalmente"
+  fi
+fi

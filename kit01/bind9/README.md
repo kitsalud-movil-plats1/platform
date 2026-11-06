@@ -10,7 +10,7 @@ DNS autoritativo y recursivo del kit (R2, sección 9 del documento). Lo instala 
 | Consultas y recursión | Solo desde `10.20.0.0/16`, `fd5a:fc7e:d716::/48` y localhost. Sin transferencias de zona |
 | Reenviadores | `1.1.1.1` y `9.9.9.9` con `forward first`; si no responden, resuelve desde la raíz. `dnssec-validation auto`, salvo `salud.movil` (`validate-except`), que no cuelga de un TLD real |
 | Delegación | `ad.salud.movil` se delega al DNS interno de Samba AD en clinica01 (`dc01.ad`, platform#8). La zona `salud.movil` tiene `forwarders { };`, así que las consultas de la subzona van a clinica01 y nunca a los reenviadores |
-| Sin Internet | Las tres zonas son autoritativas y responden igual; lo externo devuelve `SERVFAIL` |
+| Sin Internet | Las tres zonas son autoritativas y responden igual. A la Interna y a los servidores lo externo les devuelve `SERVFAIL`, y a la Comunidad la IP del portal (ver abajo) |
 | Logs | Consultas en `/var/log/named/consultas.log` y el resto en `/var/log/named/named.log`, con rotación por tamaño. Los eventos generales también van a syslog (canal `default_syslog`) y quedan en `/var/log/kitsalud/kit01/dns.log` (observability#3) |
 
 ## Nombres
@@ -28,6 +28,29 @@ DNS autoritativo y recursivo del kit (R2, sección 9 del documento). Lo instala 
 `ad.salud.movil` está delegada a Samba AD en clinica01 (`ad NS dc01.ad.salud.movil.`, en `dns_delegaciones`) y `dc01.ad` es el glue de la delegación. Los demás nombres del dominio (`_ldap._tcp`, `_kerberos._udp` y los que registre Samba) los responde el DC. BIND9 consulta a clinica01 desde `10.20.20.1` o `.10`, que son los únicos orígenes que acepta su ufw (F-25).
 
 Las inversas tienen un PTR por dirección: `kit01` (`10.20.10.1`, `10.20.20.1` y sus IPv6), `ns1` (`.10`), `portal`, `sw01`, `ap01`, `clinica01` y `comunidad01`.
+
+## Sin Internet, todo lleva al portal
+
+Sin Internet, los celulares de la Comunidad no detectan el portal, porque sus pruebas (`connectivitycheck.gstatic.com`, `captive.apple.com`, `www.msftconnecttest.com` y otras) no resuelven. Para que lo abran solos y para que cualquier dirección que escriba la persona termine en el portal, BIND9 tiene una zona RPZ (`sin-internet.rpz`) que se activa sola (network#9).
+
+| Pieza | Qué hace |
+|---|---|
+| `kit-internet.timer` | Cada 30 s ejecuta `/usr/local/sbin/kit-internet`, que pregunta `. NS` a los reenviadores (`1.1.1.1` y `9.9.9.9`) desde kit01 |
+| Modo sin Internet | Con dos fallos seguidos copia `/etc/bind/zonas/sin-internet.rpz` a `/var/lib/bind/sin-internet.rpz` y recarga la zona con `rndc`. Cualquier nombre externo responde `10.20.40.1` y `fd5a:fc7e:d716:40::1` con TTL de 30 s |
+| Modo con Internet | Con la primera respuesta copia `con-internet.rpz`, que no tiene reglas |
+| Quién no cambia | La Interna, los servidores y localhost, por su IP de origen (`rpz-client-ip` con `PASSTHRU`), y las zonas del kit con sus inversas (`salud.movil`, `*.salud.movil` y las dos inversas) |
+| Respuesta inmediata | `qname-wait-recurse no` responde sin esperar a los reenviadores caídos y `min-update-interval 0` aplica el cambio de la zona enseguida |
+| Registro | Cada cambio queda en el journal con la etiqueta `kit-internet`, y el estado en `/run/kit-internet/modo` (`con` o `sin`) |
+
+Con la IP del portal, nginx redirige cualquier nombre a `portal.salud.movil`. Quien no aceptó ve las condiciones y quien aceptó ve el menú. El HTTPS no se puede redirigir, así que una dirección `https://` externa sigue sin cargar. Al volver de `sin` a `con`, named avisa `zone serial (1/2) has gone backwards`, que es esperable, porque cada variante tiene su serial fijo.
+
+```bash
+cat /run/kit-internet/modo                                  # con
+journalctl -t kit-internet -o short-iso                     # cada cambio de modo
+dig -b 10.20.40.1 @10.20.20.10 example.org +short           # con Internet, la IP real
+```
+
+Con la simulación remota de P9 (`docs/pruebas/scripts/P09-sin-internet-remoto.sh`) kit01 pasa a `sin` en menos de 1 minuto y vuelve a `con` al terminar.
 
 ## Cómo se despliega
 
@@ -49,7 +72,8 @@ Para agregar un nombre se edita `dns.yml` y se vuelve a ejecutar el playbook.
 
 | Comando | Resultado esperado |
 |---|---|
-| `sudo named-checkconf -z` | Carga las tres zonas sin errores |
+| `sudo named-checkconf -z` | Carga las tres zonas y `sin-internet.rpz` sin errores |
+| `systemctl is-active kit-internet.timer` y `cat /run/kit-internet/modo` | `active` y `con` |
 | `ss -lnup 'sport = :53'` | `named` solo en `10.20.20.10` y `[fd5a:fc7e:d716:20::10]` |
 | `dig @10.20.20.10 pacientes.salud.movil A` y `AAAA` | `10.20.20.11` y `fd5a:fc7e:d716:20::11`, con el flag `aa` |
 | `dig @fd5a:fc7e:d716:20::10 -x 10.20.20.11` y `-x fd5a:fc7e:d716:20::11` | `clinica01.salud.movil.` |

@@ -1,0 +1,9 @@
+# {{ ansible_managed }} (rol bind9, network#9)
+[Unit]
+Description=Revisa la salida a Internet y cambia la zona RPZ del portal
+After=named.service
+Requires=named.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/kit-internet

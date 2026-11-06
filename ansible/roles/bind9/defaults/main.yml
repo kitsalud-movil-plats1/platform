@@ -7,3 +7,23 @@ bind9_ttl: 3600
 bind9_log_dir: /var/log/named
 # Subzonas delegadas a otro servidor (dns.yml)
 dns_delegaciones: []
+
+# Sin Internet (network#9, R-04). Un timer revisa los reenviadores y, si fallan
+# las veces seguidas de bind9_sin_internet_fallos, la zona RPZ responde
+# cualquier nombre externo con la IP del portal. Solo para la Comunidad: los
+# orígenes de bind9_sin_internet_excluidos y las zonas del kit no cambian
+bind9_sin_internet_zona: sin-internet.rpz
+bind9_sin_internet_activa: /var/lib/bind/sin-internet.rpz
+bind9_sin_internet_ttl: 30
+bind9_sin_internet_portal4: "{{ redes.comunidad.gw4 }}"
+bind9_sin_internet_portal6: "{{ redes.comunidad.gw6 }}"
+bind9_sin_internet_excluidos:
+  - "{{ redes.interna.ipv4 }}"
+  - "{{ redes.interna.ipv6 }}"
+  - "{{ redes.servidores.ipv4 }}"
+  - "{{ redes.servidores.ipv6 }}"
+  - 127.0.0.1/32
+  - ::1/128
+bind9_sin_internet_pruebas: "{{ dns_reenviadores }}"
+bind9_sin_internet_intervalo: 30s
+bind9_sin_internet_fallos: 2
