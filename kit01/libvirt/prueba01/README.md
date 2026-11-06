@@ -1,6 +1,6 @@
 # prueba01
 
-VM de prueba conectada a `br-com`, que hace de celular de la Comunidad (VLAN 40) para validar en remoto DHCPv4, IPv6, DNS, portal y firewall (D-24). Las pruebas con Wi-Fi y celulares se confirman en la visita final.
+VM de prueba conectada a `br-com`, que hace de celular de la Comunidad (VLAN 40) para validar en remoto DHCPv4, IPv6, DNS, portal y firewall. Las pruebas con Wi-Fi y celulares se confirman en la visita final.
 
 | Dato | Valor |
 |---|---|
@@ -45,9 +45,9 @@ ansible-playbook playbooks/prueba01.yml -e prueba01_estado=apagada
 | Dirección IPv4 | `ip -4 -br addr show eth0` | `10.20.40.100-250/24` | network#5 |
 | Dirección IPv6 y ruta | `ip -6 -br addr show eth0; ip -6 route show default` | `fd5a:fc7e:d716:40::/64` por SLAAC y `default via fe80::1` | network#6 |
 | DNS | `dig pacientes.salud.movil A` y `AAAA` | `10.20.20.11` y `fd5a:fc7e:d716:20::11` | network#5 |
-| Eco al gateway (F-23) | `ping -c2 10.20.40.1; ping -6 -c2 fe80::1%eth0` | Responden | network#5 |
-| Aislamiento (F-20, P3) | `curl -m5 https://pacientes.salud.movil; ping -c2 10.20.10.1` | Sin respuesta; en kit01, `journalctl -k \| grep fw-drop` con `IN=br-com` | network#5 |
-| Portal (F-08) | `curl -sI http://neverssl.com` | Redirección a `portal.salud.movil` | network#8 |
+| Eco al gateway | `ping -c2 10.20.40.1; ping -6 -c2 fe80::1%eth0` | Responden | network#5 |
+| Aislamiento | `curl -m5 https://pacientes.salud.movil; ping -c2 10.20.10.1` | Sin respuesta; en kit01, `journalctl -k \| grep fw-drop` con `IN=br-com` | network#5 |
+| Portal | `curl -sI http://neverssl.com` | Redirección a `portal.salud.movil` | network#8 |
 
 ## Cómo se verifica
 

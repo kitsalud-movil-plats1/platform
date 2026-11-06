@@ -1,6 +1,6 @@
 # NUT y apagado ordenado en kit01
 
-El kit no tiene UPS física (C-01), así que la alimentación segura es lógica (sección 13). NUT usa el driver `dummy-ups` con un archivo de estado que se cambia a mano para simular el corte. Con la UPS en batería y la batería baja, `upsmon` ejecuta `kit-apagado`, que apaga comunidad01, después clinica01 y al final kit01. Lo instala el rol `nut` de [`../../ansible/`](../../ansible/) con `playbooks/nut.yml`.
+El kit no tiene UPS física, así que la alimentación segura es lógica. NUT usa el driver `dummy-ups` con un archivo de estado que se cambia a mano para simular el corte. Con la UPS en batería y la batería baja, `upsmon` ejecuta `kit-apagado`, que apaga comunidad01, después clinica01 y al final kit01. Lo instala el rol `nut` de [`../../ansible/`](../../ansible/) con `playbooks/nut.yml`.
 
 | Elemento | Valor |
 |---|---|

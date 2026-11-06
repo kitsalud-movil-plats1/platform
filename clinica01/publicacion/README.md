@@ -1,6 +1,6 @@
 # Publicación de contenido de clinica01 a comunidad01
 
-El personal sube el material al recurso SMB `contenido` de clinica01 y un timer lo copia a comunidad01, donde lo sirven Kiwix (`biblioteca`) y Jellyfin (`videos`). El flujo va siempre de clínica a comunidad (R9, sección 10.5, F-12). Lo instala el rol `publicacion` de [`../../ansible/`](../../ansible/) con `playbooks/publicacion.yml`, que también aplica el rol `publicacion_destino` del repositorio `apps` en comunidad01 ([`apps/comunidad01/medios/`](https://github.com/kitsalud-movil-plats1/apps/tree/main/comunidad01/medios)).
+El personal sube el material al recurso SMB `contenido` de clinica01 y un timer lo copia a comunidad01, donde lo sirven Kiwix (`biblioteca`) y Jellyfin (`videos`). El flujo va siempre de clínica a comunidad. Lo instala el rol `publicacion` de [`../../ansible/`](../../ansible/) con `playbooks/publicacion.yml`, que también aplica el rol `publicacion_destino` del repositorio `apps` en comunidad01 ([`apps/comunidad01/medios/`](https://github.com/kitsalud-movil-plats1/apps/tree/main/comunidad01/medios)).
 
 | Carpeta de `contenido` | Destino en comunidad01 | Lo sirve |
 |---|---|---|

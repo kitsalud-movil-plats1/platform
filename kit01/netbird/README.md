@@ -1,6 +1,6 @@
 # NetBird en kit01
 
-Acceso remoto para administrar el kit durante el desarrollo (D-21, sección 10.7 del documento). No forma parte de la operación en campo.
+Acceso remoto para administrar el kit. No forma parte de la operación en campo.
 
 **Estado (2026-10-09).** Instalado (versión 0.80.0) y conectado. La IP de kit01 en la red de NetBird es `100.90.225.113`.
 

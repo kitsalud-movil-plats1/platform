@@ -1,6 +1,6 @@
 # Ansible del kit
 
-Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VMs con los roles de todos los repositorios.
+Base de Ansible del kit. Desde aquí se configuran kit01 y las VMs con los roles de todos los repositorios.
 
 ## Estructura
 
@@ -9,10 +9,10 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `ansible.cfg` | Inventario por defecto (`inventarios/kit`), `roles_path` hacia `roles/` y hacia `../../{network,apps,observability}/ansible/roles`, y la contraseña del vault en `~/.config/kitsalud/vault-pass` |
 | `inventarios/kit/` | kit01 por NetBird; clinica01 y comunidad01 a través de kit01 (grupo `vms`); prueba01 por su link-local desde kit01 (grupo `pruebas`) |
 | `inventarios/lab/` | El laboratorio virtual (`workspace/lab-virtual`), con `kitlab-kit01` como `kit01` y `kitlab-cliente` como VM de prueba |
-| `inventarios/kit/group_vars/all/red.yml` | Plan de direcciones (secciones 7 y 8). Se define solo aquí; el inventario del laboratorio lo enlaza |
+| `inventarios/kit/group_vars/all/red.yml` | Plan de direcciones. Se define solo aquí; el inventario del laboratorio lo enlaza |
 | `inventarios/kit/group_vars/all/maquinas.yml` | Definición de las VMs (vCPU, RAM, discos, MAC, IP, autostart). Campos opcionales: `red`, `direccion` (`fija` o `dhcp`), `disco_datos`, `ssh_espera` y `ssh_claves` |
 | `inventarios/kit/group_vars/all/vault.yml` | Secretos cifrados con `ansible-vault`. Sus claves están en [`vault.example.yml`](vault.example.yml) |
-| `inventarios/*/host_vars/kit01.yml` | Nombres de interfaz de cada rol (`iface_wan`, `iface_lan`, D-14, R-08), la WAN del sitio (`wan`: fija en el kit, DHCP por MAC en el laboratorio) y ajustes propios de kit01. En el laboratorio, `kit01_firewall_if_netbird: wan0` y `kit01_netbird: false` |
+| `inventarios/*/host_vars/kit01.yml` | Nombres de interfaz de cada rol (`iface_wan`, `iface_lan`), la WAN del sitio (`wan`: fija en el kit, DHCP por MAC en el laboratorio) y ajustes propios de kit01. En el laboratorio, `kit01_firewall_if_netbird: wan0` y `kit01_netbird: false` |
 | `playbooks/comun.yml` | Aplica el rol `comun` a todos los hosts. Con `prueba01` encendida se corre con `-l '!pruebas'`, porque esa VM no lleva el rol |
 | `playbooks/red-kit01.yml` | Firewall y red de kit01 (roles `kit01_firewall` y `kit01_red` del repositorio `network`). Solo recarga el firewall o la red si cambia el resultado efectivo, y entonces con restauración programada a los 120 s, que cancela solo si entra de nuevo y NetBird sigue igual. Primero siempre con `--check --diff` (ver `network/kit01/netplan/` y `network/kit01/nftables/`) |
 | `playbooks/portal.yml` | Portal cautivo en kit01: nginx (rol `nginx`) con el sitio, las páginas y el servicio que autoriza la MAC (rol `kit01_portal` del repositorio `network`). El set, la redirección y los flujos los pone `red-kit01.yml` (ver `network/kit01/portal/`) |
@@ -47,7 +47,7 @@ Base de Ansible del kit (D-17, E2, E7). Desde aquí se configuran kit01 y las VM
 | `inventarios/kit/group_vars/all/samba.yml` | Dominio de Samba AD (realm, grupos, usuarios de prueba y política de contraseñas) |
 | `playbooks/samba.yml` | Samba AD DC en clinica01 (rol `samba_ad`) |
 | `playbooks/ca.yml` | Raíz de la CA del kit y certificado de `monitoreo` en kit01 (rol `ca_interna`). Los intermedios y los certificados de `ca_hojas_vm` los firma el mismo rol en `clinica01.yml` y `comunidad01.yml` |
-| `inventarios/kit/group_vars/all/monitoreo.yml` | Direcciones de Prometheus y blackbox, node_exporter de las VMs, orígenes de kit01 para ufw (F-14) y listas de sondas DNS, web, TCP y ping. Los puertos que abre cada VM para las sondas van en `monitoreo_puertos` de su `host_vars` |
+| `inventarios/kit/group_vars/all/monitoreo.yml` | Direcciones de Prometheus y blackbox, node_exporter de las VMs, orígenes de kit01 para ufw y listas de sondas DNS, web, TCP y ping. Los puertos que abre cada VM para las sondas van en `monitoreo_puertos` de su `host_vars` |
 | `playbooks/monitoreo.yml` | node_exporter en kit01 y en las VMs, y blackbox, Prometheus, nginx (rol `nginx`) y Grafana en kit01 (roles del repositorio `observability`). Necesita la CA del kit (`ca.yml`) y el certificado LDAPS de Samba (`clinica01.yml` y `samba.yml`) |
 | `inventarios/kit/group_vars/all/registros.yml` | Direcciones de escucha de rsyslog en kit01 y equipos que envían syslog, con sus dos direcciones (`registros_equipos`) |
 | `playbooks/registros.yml` | Receptor central de rsyslog en kit01 (rol `rsyslog_central` del repositorio `observability`). El reenvío de las VMs lo hace el rol `comun` |
@@ -60,7 +60,7 @@ Los roles de cada componente viven en su repositorio (`<repo>/ansible/roles/`) y
 
 | Qué | Dónde aplica | Detalle |
 |---|---|---|
-| Usuario de administración compartido (D-18) | Todos | `kitsalud` con sudo. Se crea con el hash del vault y nunca cambia una contraseña existente (`update_password: on_create`). Los grupos extra van por host (`comun_admin_grupos_extra`; en kit01, `libvirt` y `kvm`) |
+| Usuario de administración compartido | Todos | `kitsalud` con sudo. Se crea con el hash del vault y nunca cambia una contraseña existente (`update_password: on_create`). Los grupos extra van por host (`comun_admin_grupos_extra`; en kit01, `libvirt` y `kvm`) |
 | sshd sin root | Todos | `/etc/ssh/sshd_config.d/10-comun.conf` con `PermitRootLogin no`. Borra el `10-kit01.conf` de platform#2. Antes de recargar valida con `sshd -t` |
 | Zona horaria | Todos | `America/Bogota` (`comun_zona_horaria`) |
 | ufw | Solo el grupo `vms` (`comun_ufw`) | Entrada denegada y SSH solo desde kit01 (`comun_ufw_ssh_origenes`). En kit01 filtra nftables y ufw no se toca |
@@ -83,7 +83,7 @@ ansible-vault create inventarios/kit/group_vars/all/vault.yml   # mismas claves 
 
 ## Acceso a las VMs
 
-Las VMs solo aceptan SSH desde kit01 (D-18), así que Ansible salta por kit01. Los dos saltos usan la contraseña del usuario compartido y `sshpass` solo contesta un aviso, así que el salto por kit01 lee la contraseña de `~/.config/kitsalud/ssh-pass` (`600`, fuera del repositorio). Ese archivo lo crea `playbooks/preparar-control.yml` desde el vault, una vez por máquina de control. Expone lo mismo que `vault-pass`, que ya está en esa carpeta.
+Las VMs solo aceptan SSH desde kit01, así que Ansible salta por kit01. Los dos saltos usan la contraseña del usuario compartido y `sshpass` solo contesta un aviso, así que el salto por kit01 lee la contraseña de `~/.config/kitsalud/ssh-pass` (`600`, fuera del repositorio). Ese archivo lo crea `playbooks/preparar-control.yml` desde el vault, una vez por máquina de control. Expone lo mismo que `vault-pass`, que ya está en esa carpeta.
 
 ## Uso
 
