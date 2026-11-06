@@ -33,7 +33,7 @@ Base de Ansible del kit. Desde aquí se configuran kit01 y las VMs con los roles
 | `inventarios/*/group_vars/all/backups-equipos.yml` | UUID del disco de backups, direcciones de kit01 hacia las VMs y qué se extrae de cada equipo (módulos de rsync, bases y dominio). Uno por inventario |
 | `playbooks/backups.yml` | Backups pull con restic. Rol `backups` en kit01 (restic, clave, llave, script y timer) y rol `backup_origen` en las VMs (usuario `backup` con comando forzado y rsync de solo lectura). El timer se activa al final (etiqueta `timer`) |
 | `roles/backups/` y `roles/backup_origen/` | Backups del kit (ver `backups/README.md`) |
-| `inventarios/kit/group_vars/all/dhcp.yml` | Reservas DHCPv4 de las estaciones de administración (`dhcp_reservas`) |
+| `inventarios/kit/group_vars/all/dhcp.yml` | Puertos de administración de sw01 y su pool DHCPv4 (`dhcp_puertos_admin`, `dhcp_pool_admin`) |
 | `playbooks/dhcp.yml` | Kea DHCPv4, Kea DHCPv6 sin estado y radvd en kit01 (roles `kea_dhcp4`, `kea_dhcp6` y `radvd` del repositorio `network`) |
 | `playbooks/prueba01.yml` | Enciende (`prueba01_estado=encendida`, por defecto) o apaga `prueba01` |
 | `playbooks/preparar-control.yml` | Crea `~/.config/kitsalud/ssh-pass` desde el vault, para el salto por kit01 |
