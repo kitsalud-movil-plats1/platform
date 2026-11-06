@@ -1,6 +1,6 @@
 # BIND9 en kit01
 
-DNS autoritativo y recursivo del kit (R2, sección 9 del documento). Lo instala y configura el rol `bind9` de [`../../ansible/`](../../ansible/) con `playbooks/dns.yml`. Los nombres están en `ansible/inventarios/kit/group_vars/all/dns.yml` y las direcciones salen de `red.yml`, así que cada IP se define una sola vez.
+DNS autoritativo y recursivo del kit. Lo instala y configura el rol `bind9` de [`../../ansible/`](../../ansible/) con `playbooks/dns.yml`. Los nombres están en `ansible/inventarios/kit/group_vars/all/dns.yml` y las direcciones salen de `red.yml`, así que cada IP se define una sola vez.
 
 | Elemento | Valor |
 |---|---|
@@ -11,7 +11,7 @@ DNS autoritativo y recursivo del kit (R2, sección 9 del documento). Lo instala 
 | Reenviadores | `1.1.1.1` y `9.9.9.9` con `forward first`; si no responden, resuelve desde la raíz. `dnssec-validation auto`, salvo `salud.movil` (`validate-except`), que no cuelga de un TLD real |
 | Delegación | `ad.salud.movil` se delega al DNS interno de Samba AD en clinica01 (`dc01.ad`, platform#8). La zona `salud.movil` tiene `forwarders { };`, así que las consultas de la subzona van a clinica01 y nunca a los reenviadores |
 | Sin Internet | Las tres zonas son autoritativas y responden igual. A la Interna y a los servidores lo externo les devuelve `SERVFAIL`, y a la Comunidad la IP del portal (ver abajo) |
-| Logs | Consultas en `/var/log/named/consultas.log` y el resto en `/var/log/named/named.log`, con rotación por tamaño. Los eventos generales también van a syslog (canal `default_syslog`) y quedan en `/var/log/kitsalud/kit01/dns.log` (observability#3) |
+| Logs | Consultas en `/var/log/named/consultas.log` y el resto en `/var/log/named/named.log`, con rotación por tamaño. Los eventos generales también van a syslog (canal `default_syslog`) y quedan en `/var/log/kitsalud/kit01/dns.log` |
 
 ## Nombres
 
@@ -25,13 +25,13 @@ DNS autoritativo y recursivo del kit (R2, sección 9 del documento). Lo instala 
 | `kit01`, `sw01` | `10.20.10.1`, `10.20.10.2` | `fd5a:fc7e:d716:10::1`, `::2` |
 | `ap01` | `10.20.10.3` | - (el AP solo se gestiona por IPv4) |
 
-`ad.salud.movil` está delegada a Samba AD en clinica01 (`ad NS dc01.ad.salud.movil.`, en `dns_delegaciones`) y `dc01.ad` es el glue de la delegación. Los demás nombres del dominio (`_ldap._tcp`, `_kerberos._udp` y los que registre Samba) los responde el DC. BIND9 consulta a clinica01 desde `10.20.20.1` o `.10`, que son los únicos orígenes que acepta su ufw (F-25).
+`ad.salud.movil` está delegada a Samba AD en clinica01 (`ad NS dc01.ad.salud.movil.`, en `dns_delegaciones`) y `dc01.ad` es el glue de la delegación. Los demás nombres del dominio (`_ldap._tcp`, `_kerberos._udp` y los que registre Samba) los responde el DC. BIND9 consulta a clinica01 desde `10.20.20.1` o `.10`, que son los únicos orígenes que acepta su ufw.
 
 Las inversas tienen un PTR por dirección: `kit01` (`10.20.10.1`, `10.20.20.1` y sus IPv6), `ns1` (`.10`), `portal`, `sw01`, `ap01`, `clinica01` y `comunidad01`.
 
 ## Sin Internet, todo lleva al portal
 
-Sin Internet, los celulares de la Comunidad no detectan el portal, porque sus pruebas (`connectivitycheck.gstatic.com`, `captive.apple.com`, `www.msftconnecttest.com` y otras) no resuelven. Para que lo abran solos y para que cualquier dirección que escriba la persona termine en el portal, BIND9 tiene una zona RPZ (`sin-internet.rpz`) que se activa sola (network#9).
+Sin Internet, los celulares de la Comunidad no detectan el portal, porque sus pruebas (`connectivitycheck.gstatic.com`, `captive.apple.com`, `www.msftconnecttest.com` y otras) no resuelven. Para que lo abran solos y para que cualquier dirección que escriba la persona termine en el portal, BIND9 tiene una zona RPZ (`sin-internet.rpz`) que se activa sola.
 
 | Pieza | Qué hace |
 |---|---|

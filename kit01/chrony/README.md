@@ -1,6 +1,6 @@
 # Chrony en kit01
 
-Servidor de hora del kit (R3, P8), en la IP de servicios (`ntp.salud.movil`). Lo instala y configura el rol `chrony` de [`../../ansible/`](../../ansible/) con `playbooks/ntp.yml`. Los clientes de las VMs los configura el rol `comun`.
+Servidor de hora del kit, en la IP de servicios (`ntp.salud.movil`). Lo instala y configura el rol `chrony` de [`../../ansible/`](../../ansible/) con `playbooks/ntp.yml`. Los clientes de las VMs los configura el rol `comun`.
 
 | Elemento | Valor |
 |---|---|
@@ -8,7 +8,7 @@ Servidor de hora del kit (R3, P8), en la IP de servicios (`ntp.salud.movil`). Lo
 | Fuentes | `pool pool.ntp.org iburst maxsources 4` |
 | Sin Internet | `local stratum 10 orphan`. kit01 conserva la última referencia y, si el corte se alarga, sigue sirviendo hora como stratum 10 |
 | Escucha | Solo `10.20.20.10:123` y `[fd5a:fc7e:d716:20::10]:123` (`bindaddress`) |
-| Acceso | `allow` para `10.20.0.0/16` y `fd5a:fc7e:d716::/48`; el firewall de kit01 deja el 123 hacia `.10` desde la Interna, la Comunidad y `br-srv` (F-03) |
+| Acceso | `allow` para `10.20.0.0/16` y `fd5a:fc7e:d716::/48`; el firewall de kit01 deja el 123 hacia `.10` desde la Interna, la Comunidad y `br-srv` |
 
 ## Clientes
 
@@ -17,7 +17,7 @@ Servidor de hora del kit (R3, P8), en la IP de servicios (`ntp.salud.movil`). Lo
 | clinica01, comunidad01 | Rol `comun` con `comun_chrony_cliente: true` (grupo `vms`). Su `chrony.conf` solo tiene `server ntp.salud.movil iburst`, sin los pools de Ubuntu, porque el firewall no deja salir a las VMs por el 123 | `^*` en `ntp.salud.movil`, stratum 4 |
 | sw01 | `/system ntp client set enabled=yes` y servidor `10.20.20.10` (`network/switch/sw01.rsc`) | `status: synchronized` |
 | ap01 | No aplica. El TL-WA801ND v3 (firmware 3.16.9) no tiene ajustes de hora y tampoco envía syslog | - |
-| Estaciones de la Interna y la Comunidad | NTP por DHCPv4 y DHCPv6 (network#5, network#6) | - |
+| Estaciones de la Interna y la Comunidad | NTP por DHCPv4 y DHCPv6 | - |
 
 ## Cómo se despliega
 

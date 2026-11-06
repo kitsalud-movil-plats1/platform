@@ -1,6 +1,6 @@
 # kit01, Beelink EQi12
 
-Router/firewall e hipervisor del kit (D-02, D-04, sección 6 del documento). La ficha del equipo está en `workspace/contexto/equipos/kit01-beelink-eqi12.md`.
+Router/firewall e hipervisor del kit. La ficha del equipo está en `workspace/contexto/equipos/kit01-beelink-eqi12.md`.
 
 ## Inventario (2026-10-09)
 
@@ -25,7 +25,7 @@ En la misma sesión se verificaron los equipos de red, sw01 con RouterOS 7.13.5 
 |---|---|
 | Sistema | Ubuntu Server 24.04.5 LTS con LVM, actualizado el 2026-10-10. Corre el kernel 6.8.0-139 y el 6.8.0-146 queda instalado para el próximo arranque |
 | Hostname | `kit01` (`kit01.salud.movil` en `/etc/hosts`). cloud-init está desactivado, así que no lo cambia al arrancar |
-| Usuario de administración | `kitsalud`, compartido por el grupo (D-18), con sudo y en los grupos `libvirt` y `kvm` |
+| Usuario de administración | `kitsalud`, compartido por el grupo, con sudo y en los grupos `libvirt` y `kvm` |
 | SSH | Con contraseña y `PermitRootLogin no`, con el drop-in `10-comun.conf` del rol `comun` de Ansible ([`../ansible/`](../ansible/)). Escucha en IPv4 e IPv6 |
 | Zona horaria | `America/Bogota`, del rol `comun` |
 | Red | Netplan en `network/kit01/netplan/`, reenvío en `network/kit01/sysctl/` y firewall en `network/kit01/nftables/` |
@@ -35,7 +35,7 @@ En la misma sesión se verificaron los equipos de red, sw01 con RouterOS 7.13.5 
 
 ### Cómo se despliega
 
-Todo se hace en remoto por NetBird (D-23), sin tocar `enp170s0`, netplan, nftables ni la configuración de NetBird. Desde `platform/ansible/`, en este orden:
+Todo se hace en remoto por NetBird, sin tocar `enp170s0`, netplan, nftables ni la configuración de NetBird. Desde `platform/ansible/`, en este orden:
 
 ```bash
 ansible-playbook playbooks/comun.yml -l kit01      # usuario compartido (con los grupos libvirt y kvm), sshd sin root y zona horaria
@@ -55,7 +55,7 @@ El rol `kit01_base` ([`../ansible/roles/kit01_base/`](../ansible/roles/kit01_bas
 
 No reinicia ni actualiza paquetes, así que una segunda ejecución termina con `changed=0`.
 
-**Actualizar paquetes.** Se hace a mano en la ventana de mantenimiento (R-05), con NetBird retenido y sin reiniciar. `systemd-run` evita que dpkg quede a medias si se corta la sesión.
+**Actualizar paquetes.** Se hace a mano en la ventana de mantenimiento, con NetBird retenido y sin reiniciar. `systemd-run` evita que dpkg quede a medias si se corta la sesión.
 
 ```bash
 sudo apt-get update
@@ -91,6 +91,6 @@ journalctl -u kit01-apt -f
 
 ## Pendiente para el reinicio de P12
 
-- Arrancar con el kernel 6.8.0-146 y comprobar con `uname -r`, `ip -br link` (las NIC conservan `enp170s0` y `enp171s0`, D-14), `hostnamectl` y `netbird status`.
+- Arrancar con el kernel 6.8.0-146 y comprobar con `uname -r`, `ip -br link` (las NIC conservan `enp170s0` y `enp171s0`), `hostnamectl` y `netbird status`.
 - Quitar el kernel 6.8.0-139 con `apt autoremove` después de comprobar el arranque.
 - Opcional, "Restore on AC power loss" en la BIOS.

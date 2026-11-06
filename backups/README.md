@@ -1,6 +1,6 @@
 # Backups del kit con restic
 
-kit01 extrae una vez por semana los datos y las configuraciones de cada VM por SSH, los junta en un área temporal y los guarda cifrados con restic en el disco USB, que solo se monta durante la copia (R11, D-10, sección 10.6). Las VMs no tienen la clave del repositorio ni llaves hacia kit01. Lo instalan el rol `backups` (kit01) y el rol `backup_origen` (VMs) de [`../ansible/`](../ansible/) con `playbooks/backups.yml`.
+kit01 extrae una vez por semana los datos y las configuraciones de cada VM por SSH, los junta en un área temporal y los guarda cifrados con restic en el disco USB, que solo se monta durante la copia. Las VMs no tienen la clave del repositorio ni llaves hacia kit01. Lo instalan el rol `backups` (kit01) y el rol `backup_origen` (VMs) de [`../ansible/`](../ansible/) con `playbooks/backups.yml`.
 
 | Snapshot (etiqueta) | Qué tiene | De dónde sale |
 |---|---|---|
@@ -24,7 +24,7 @@ No se respaldan las imágenes de las VMs (se reconstruyen con Ansible), los dato
 | Conexión | Por IPv6 y, si no responde, por IPv4 (`direcciones` de cada equipo). El log dice cuál usó |
 | Variables | Política (frecuencia, retención, usuario, llave, rutas de kit01) en `group_vars/all/backups.yml`; disco, direcciones y qué se extrae de cada equipo en `group_vars/all/backups-equipos.yml` (el laboratorio virtual tiene el suyo) |
 
-**Qué puede hacer la llave en las VMs.** Entra como el usuario `backup` de Ubuntu, sin contraseña, solo con la llave y solo desde las direcciones de kit01 en `br-srv` (`from=`, F-02). sshd le fuerza `sudo -n /usr/local/sbin/backup-extraer`, sin PTY, túneles ni reenvíos, y sudo solo le permite ese comando sin argumentos. El comando lee la orden de `SSH_ORIGINAL_COMMAND` y solo acepta `ping`, `rsync --server --daemon .` con los módulos de `/etc/kitsalud/backup/rsyncd.conf` (solo lectura, sin listar, con `--remove-source-files` rechazado), y en clinica01 `postgres <base>` para las bases de la lista, `postgres-globales` y `dominio`. Cualquier otra orden termina con `Orden no permitida` y queda en el log de autenticación.
+**Qué puede hacer la llave en las VMs.** Entra como el usuario `backup` de Ubuntu, sin contraseña, solo con la llave y solo desde las direcciones de kit01 en `br-srv` (`from=`). sshd le fuerza `sudo -n /usr/local/sbin/backup-extraer`, sin PTY, túneles ni reenvíos, y sudo solo le permite ese comando sin argumentos. El comando lee la orden de `SSH_ORIGINAL_COMMAND` y solo acepta `ping`, `rsync --server --daemon .` con los módulos de `/etc/kitsalud/backup/rsyncd.conf` (solo lectura, sin listar, con `--remove-source-files` rechazado), y en clinica01 `postgres <base>` para las bases de la lista, `postgres-globales` y `dominio`. Cualquier otra orden termina con `Orden no permitida` y queda en el log de autenticación.
 
 ## Cómo se despliega
 
@@ -46,7 +46,7 @@ sudo systemctl start backup.service    # copia ahora (por ejemplo, antes de un c
 journalctl -u backup -o cat            # qué extrajo, los snapshots y el espacio del disco
 ```
 
-Los objetivos de recuperación y el procedimiento completo de cada escenario están en el plan de respaldo, `docs/respaldo/plan-respaldo.md` (E5). Para consultar o restaurar se monta el disco y se cargan las variables de restic.
+Los objetivos de recuperación y el procedimiento completo de cada escenario están en el plan de respaldo, `docs/respaldo/plan-respaldo.md`. Para consultar o restaurar se monta el disco y se cargan las variables de restic.
 
 ```bash
 sudo -i

@@ -1,18 +1,18 @@
 # CA interna del kit
 
-Una sola raíz para todo el HTTPS del kit (D-16). La llave de la raíz vive solo en kit01. Cada VM tiene un intermedio que solo puede firmar sus propios nombres, y Caddy lo usa con `tls internal` para emitir y renovar solo sus certificados. Si alguien compromete comunidad01, la VM a la que llega la comunidad, su intermedio no sirve para falsificar `pacientes.salud.movil`.
+Una sola raíz para todo el HTTPS del kit. La llave de la raíz vive solo en kit01. Cada VM tiene un intermedio que solo puede firmar sus propios nombres, y Caddy lo usa con `tls internal` para emitir y renovar solo sus certificados. Si alguien compromete comunidad01, la VM a la que llega la comunidad, su intermedio no sirve para falsificar `pacientes.salud.movil`.
 
 | Pieza | Dónde | Vigencia | Qué firma |
 |---|---|---|---|
 | Raíz "Kit de salud movil - Raiz" (EC P-256) | kit01, `/etc/kitsalud/ca/raiz.crt` y `raiz.key` (`600`, carpeta `700`) | 10 años | Los intermedios y los certificados de kit01 |
 | Intermedio "Kit de salud movil - clinica01" | clinica01, `/srv/caddy/pki/` | 2 años | Solo `pacientes`, `consultas` y `archivos` `.salud.movil` |
 | Intermedio "Kit de salud movil - comunidad01" | comunidad01, `/srv/caddy/pki/` | 2 años | Solo `registro.salud.movil` |
-| `monitoreo.salud.movil` | kit01, `/etc/kitsalud/tls/monitoreo.crt` y `.key` (`640`) | 397 días | Lo usa Grafana (observability#2) |
+| `monitoreo.salud.movil` | kit01, `/etc/kitsalud/tls/monitoreo.crt` y `.key` (`640`) | 397 días | Lo usa Grafana |
 | Hojas de Caddy | Almacén de Caddy en cada VM | 12 horas | Caddy las renueva solo |
 
 Los nombres de cada intermedio están en `ca_nombres` (`ansible/inventarios/kit/host_vars/<vm>.yml`) y van como *name constraints* críticas, así que un cliente rechaza cualquier certificado de otro nombre (`permitted subtree violation`). Los intermedios tienen `pathlen:0`: no pueden crear otras CA.
 
-La llave de la raíz no está en ningún repositorio, ni siquiera en el vault. Se respalda con los backups de kit01 (platform#11). Si se pierde, se genera otra raíz y hay que volver a instalarla en los equipos.
+La llave de la raíz no está en ningún repositorio, ni siquiera en el vault. Se respalda con los backups de kit01. Si se pierde, se genera otra raíz y hay que volver a instalarla en los equipos.
 
 ## Cómo se despliega
 
@@ -26,7 +26,7 @@ ansible-playbook playbooks/comunidad01.yml # intermedio de comunidad01, su Caddy
 
 - **Intermedios.** La llave y el CSR se generan en la VM. kit01 firma el CSR con la raíz (`community.crypto.x509_certificate`, `ownca`) y la VM recibe el certificado y la raíz. La llave del intermedio nunca sale de la VM y la de la raíz nunca sale de kit01.
 - **Renovación.** El rol vuelve a firmar un intermedio si le quedan menos de 90 días o si cambian su llave o sus nombres, y el certificado de `monitoreo` si le quedan menos de 30. Cuando cambia la CA de una VM, borra los certificados que Caddy guardó y lo reinicia, para que emita los nuevos.
-- **Publicación.** comunidad01 sirve la raíz y una página con instrucciones en `http://ca.salud.movil` (`ca_publicar` en su `host_vars`). La Interna llega ya; la Comunidad llegará con el portal (network#8).
+- **Publicación.** comunidad01 sirve la raíz y una página con instrucciones en `http://ca.salud.movil` (`ca_publicar` en su `host_vars`). La Interna llega ya; la Comunidad llegará con el portal.
 
 ## Cómo se instala en un equipo
 
