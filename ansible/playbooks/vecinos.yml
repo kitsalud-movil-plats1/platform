@@ -1,0 +1,7 @@
+---
+# Vecinos IPv6 de los clientes Wi-Fi (network#39)
+- name: Aprender los vecinos IPv6 en kit01
+  hosts: kit
+  become: true
+  roles:
+    - kit01_vecinos
