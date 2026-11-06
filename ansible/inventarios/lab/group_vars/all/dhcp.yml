@@ -1,4 +1,4 @@
 ---
-# En el laboratorio virtual, el cliente hace de estación de administración
-dhcp_reservas:
-  - { nombre: kitlab-cliente, mac: "52:54:00:4b:02:01", ipv4: 10.20.10.10 }
+# El laboratorio virtual no tiene sw01 ni opción 82. Si el cliente hace de estación
+# de administración, se le pone la dirección fija 10.20.10.10
+dhcp_puertos_admin: []
